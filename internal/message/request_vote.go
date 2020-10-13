@@ -4,6 +4,9 @@ import "net"
 
 type RequestVote struct {
 	BaseRaftMessage
+
+	TopIndex int
+	TopTerm  int
 }
 
 func NewRequestVote(base *BaseRaftMessage) *RequestVote {
