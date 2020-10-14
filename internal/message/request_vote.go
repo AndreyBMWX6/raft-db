@@ -31,3 +31,6 @@ func (rv RequestVote) Type() int {
 	return RequestVoteType
 }
 
+func (rv RequestVote) Length() int {
+	return rv.TopIndex
+}

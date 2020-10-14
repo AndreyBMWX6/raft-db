@@ -36,7 +36,7 @@ func (l *Leader) PlayRole() node.RolePlayer {
 	for {
 		select {
 		case <-l.heartbeat.C:
-
+			// отправляем heartbeat
 		default:
 			if msg := l.core.TryRecvClientMsg(); msg != nil {
 

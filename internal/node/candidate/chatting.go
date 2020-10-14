@@ -13,12 +13,14 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) node.RolePlayer {
 		return nil
 	}
 
-	if msg.Term() > c.core.Term {
+	if msg.Term() >= c.core.Term {
 		switch msg.Type() {
 		case message.AppendEntriesType:
 			return follower.BecomeFollower(c, msg.OwnerAddr())
 		case message.RequestVoteType:
-			return voter.BecomeVoter(c, msg.OwnerAddr())
+			if msg.Term() > c.core.Term {
+				return voter.BecomeVoter(c, msg.OwnerAddr())
+			}
 		default:
 			return nil
 		}

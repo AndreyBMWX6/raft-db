@@ -13,13 +13,23 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) node.RolePlayer {
 		return nil
 	}
 
-	if msg.Term() > f.core.Term {
+	if msg.Term() >= f.core.Term {
 		f.core.Term = msg.Term()
 		switch msg.Type() {
 		case message.AppendEntriesType:
 			return BecomeFollower(f, msg.OwnerAddr())
 		case message.RequestVoteType:
-			return voter.BecomeVoter(f, msg.OwnerAddr())
+			request := message.NewRequestVote(
+				&message.BaseRaftMessage{
+					Owner:	  msg.OwnerAddr(),
+					Dest: 	  msg.DestAddr(),
+					CurrTerm: msg.Term(),
+				},
+			)
+			response := f.ProcessRequestVote(request)
+			if response {
+				return voter.BecomeVoter(f, msg.OwnerAddr())
+			}
 		default:
 			return nil
 		}
@@ -68,6 +78,20 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 	f.core.SendRaftMsg(
 		message.RaftMessage(ack),
 	)
+}
+
+func (f *Follower) ProcessRequestVote(request *message.RequestVote) bool {
+	topterm := f.core.Entries[len(f.core.Entries) - 1].Term
+	if request.TopTerm < topterm {
+		return false
+	} else {
+		var topindex = len(f.core.Entries)
+		if (request.TopTerm == topterm) && (request.TopIndex < topindex) {
+			return false
+		} else {
+			return true
+		}
+	}
 }
 
 func (f *Follower) ApplyClientMessage(msg message.ClientMessage) {

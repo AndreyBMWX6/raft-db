@@ -7,6 +7,7 @@ import (
     "../internal/config"
 	"../internal/message"
 	"../internal/node"
+	"../internal/node/candidate"
 )
 
 func main() {
@@ -50,7 +51,7 @@ func main() {
 		Entries:   nil,
 	}
 
-	var candidate = node.NewCandidate(raftNode)
+	var candidate = candidate.NewCandidate(raftNode)
 	node.RunRolePlayer(candidate)
 }
 
