@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"../../node"
+	"../../message"
 )
 
 type Candidate struct {
@@ -41,14 +42,29 @@ func (c *Candidate) PlayRole() node.RolePlayer {
 	// Votes for itself
 	c.voters[c.core.Addr] = struct{}{}
 
+	// implement parallel RequestVote
+	//ctx, cancel := context.WithTimeout(context.Background(), c.core.Config.VotingTimeout)
+	//  можно убрать таймер из кандидата и использовать контекст с таймером, а мб и нет ????
+
+	for _, neighbor := range c.core.Neighbors {
+		msg := message.NewRequestVote(
+			&message.BaseRaftMessage{
+				Owner: c.core.Addr,
+				Dest: neighbor,
+				CurrTerm: c.core.Term,
+		},
+	)
+		msg.TopIndex = len(c.core.Entries)
+		msg.TopTerm = c.core.Entries[len(c.core.Entries) - 1].Term
+		go c.core.SendRaftMsg(msg)
+	}
+
 	for {
 		select {
-		// повторное голосование начинается не по истечении времени таймера кандидата,
-		// а в случае, когда никто не набрал наибольшее кол-во голосов, поэтому кандидат
-		//  должен ожидать остальных. Реализовать это.
 		case <-c.timer.C:
 			return BecomeCandidate(c)
 		default:
+
 			if msg := c.core.TryRecvRaftMsg(); msg != nil {
 				if nextRole := c.ApplyRaftMessage(msg); nextRole != nil {
 					return nextRole

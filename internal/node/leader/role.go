@@ -2,6 +2,7 @@ package leader
 
 import (
 	"../../node"
+	"../../message"
 	"context"
 	"time"
 )
@@ -36,6 +37,21 @@ func (l *Leader) PlayRole() node.RolePlayer {
 	for {
 		select {
 		case <-l.heartbeat.C:
+			///////////////////////////////
+			for _,neighbor := range l.core.Neighbors {
+				msg := message.NewAppendEntries(
+					&message.BaseRaftMessage{
+					Owner: l.core.Addr,
+					Dest: neighbor,
+					CurrTerm: l.core.Term,
+					},
+					l.core.Entries[len(l.core.Entries) - 2].Term,
+					len(l.core.Entries),
+					make([]*message.Entry, 0),
+				)
+				go l.core.SendRaftMsg(message.RaftMessage(msg))
+			}
+			//////////////////////////////
 			// отправляем heartbeat
 		default:
 			if msg := l.core.TryRecvClientMsg(); msg != nil {

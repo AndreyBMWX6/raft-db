@@ -26,8 +26,9 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) node.RolePlayer {
 					CurrTerm: msg.Term(),
 				},
 			)
+			// msg can be passed to function to remove if
 			response := f.ProcessRequestVote(request)
-			if response {
+			if response { // to return in ProcessQuery
 				return voter.BecomeVoter(f, msg.OwnerAddr())
 			}
 		default:
@@ -69,8 +70,11 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		if entries.PrevTerm != prevTerm {
 			ack.Appended = false
 		} else {
-			f.core.Entries = append(f.core.Entries[:entries.NewIndex],
-				entries.Entries...)
+			// if nil, got heartbeat, so don't need to append
+			if entries.Entries != nil {
+				f.core.Entries = append(f.core.Entries[:entries.NewIndex],
+					entries.Entries...)
+			}
 			ack.Appended = true
 		}
 	}
@@ -81,6 +85,13 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 }
 
 func (f *Follower) ProcessRequestVote(request *message.RequestVote) bool {
+	ack := message.NewRequestAck(
+		&message.BaseRaftMessage{
+			Owner:    f.core.Addr,
+			Dest:     request.Owner,
+			CurrTerm: f.core.Term,
+		},
+	)
 	topterm := f.core.Entries[len(f.core.Entries) - 1].Term
 	if request.TopTerm < topterm {
 		return false
@@ -88,7 +99,12 @@ func (f *Follower) ProcessRequestVote(request *message.RequestVote) bool {
 		var topindex = len(f.core.Entries)
 		if (request.TopTerm == topterm) && (request.TopIndex < topindex) {
 			return false
+			// not sending request_ack may be simplified
 		} else {
+			// sending request_ack signalize that node voted for candidate
+			f.core.SendRaftMsg(
+				message.RaftMessage(ack),
+			)
 			return true
 		}
 	}
