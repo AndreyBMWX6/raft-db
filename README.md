@@ -1,3 +1,3 @@
 # raft-db 
 #### Результат работы программы:
-![alt text](demos/unit_tests.png)
+![alt text](demos/unit_tests.PNG)
