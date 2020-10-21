@@ -108,6 +108,7 @@ func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) {
 	core.SendRaftMsg(
 		message.RaftMessage(ack),
 	)
+
 	if (ack.Voted) {
 		time.Sleep(core.Config.VotingTimeout)
 

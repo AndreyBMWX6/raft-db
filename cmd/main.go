@@ -1,10 +1,10 @@
 package main
 
 import (
-	"net"
 	"log"
+	"net"
 
-    "../internal/config"
+	"../internal/config"
 	"../internal/message"
 	"../internal/node"
 )
