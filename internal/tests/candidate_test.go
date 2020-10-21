@@ -72,12 +72,48 @@ func TestApplyRaftMessage(t *testing.T) {
 	lowermessage.TopTerm = 0
 	lowermessage.TopIndex = 0
 
+	// will return nil cause message term is lower than candidate term
 	result := candidate.ApplyRaftMessage(lowermessage)
 
 	if result != nil {
 		t.Error(
-			"For msg.Term", lowermessage.CurrTerm,
+			"For message term", lowermessage.CurrTerm,
+			"and candidate term", 1,
 			"expected", nil,
 			"got", result)
 	}
+
+	// message with equal term
+	equalmessage := lowermessage
+	equalmessage.CurrTerm = 1
+
+	// will return nil as candidate votes ony for candidate of bigger term
+	result = candidate.ApplyRaftMessage(lowermessage)
+
+	if result != nil {
+		t.Error(
+			"For message term", equalmessage.CurrTerm,
+			"and candidate term", 1,
+			"expected", nil,
+			"got", result)
+	}
+
+
+	biggermessage := equalmessage
+	biggermessage.CurrTerm = 2
+
+	// will return follower: BecomeFollower(candidate, biggermessage.OwnerAddr())
+	// roleplayer can't show type of role, so can't prove, that it's follower
+	result = candidate.ApplyRaftMessage(biggermessage)
+
+	result_addr := result.ReleaseNode().Addr
+	// addr is addres of ex-candidate
+	if result_addr != addr {
+		t.Error(
+			"For message term", equalmessage.CurrTerm,
+			"and candidate term", 1,
+			"expected", addr,
+			"got", result_addr)
+	}
+
 }
