@@ -4,11 +4,14 @@ import "net"
 
 type RequestAck struct {
 	BaseRaftMessage
+
+	Voted bool
 }
 
-func NewRequestAck(base *BaseRaftMessage) *RequestAck {
+func NewRequestAck(base *BaseRaftMessage, voted bool) *RequestAck {
 	return &RequestAck{
 		BaseRaftMessage: *base,
+		Voted: voted,
 	}
 }
 
@@ -25,7 +28,6 @@ func (ra *RequestAck) Term() int {
 }
 
 func (ra RequestAck) Type() int {
-	return VoteType
 	return VoteType
 }
 

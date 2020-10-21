@@ -1,10 +1,10 @@
 package node
 
 import (
-	"net"
-
 	"../config"
 	"../message"
+	"net"
+	"time"
 )
 
 // Error Types
@@ -76,4 +76,40 @@ func (n *RaftCore) SendRaftMsg(msg message.RaftMessage) {
 
 func (n *RaftCore) SendClientMsg(msg message.ClientMessage)  {
 	n.ClientOut <- msg
+}
+
+func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) {
+	ack := message.NewRequestAck(
+		&message.BaseRaftMessage{
+			Owner:    core.Addr,
+			Dest:     request.Owner,
+			CurrTerm: core.Term,
+		}, false,
+	)
+
+	// if no Entries, Topterm = 0
+	topterm := 0
+	if core.Entries != nil {
+		topterm = core.Entries[len(core.Entries) - 1].Term
+	}
+	if request.TopTerm < topterm {
+		// made for clarity
+		ack.Voted = false
+	} else {
+		var topindex = len(core.Entries)
+		if (request.TopTerm == topterm) && (request.TopIndex < topindex) {
+			// made for clarity
+			ack.Voted = false
+		} else {
+			ack.Voted = true
+		}
+	}
+
+	core.SendRaftMsg(
+		message.RaftMessage(ack),
+	)
+	if (ack.Voted) {
+		time.Sleep(core.Config.VotingTimeout)
+
+	}
 }

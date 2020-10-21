@@ -1,14 +1,13 @@
-package follower
+package node
 
 import (
+	"fmt"
 	"log"
 
-	"../../message"
-	"../../node"
-	"../voter"
+	"../message"
 )
 
-func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) node.RolePlayer {
+func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 	if msg.Term() < f.core.Term {
 		return nil
 	}
@@ -17,6 +16,8 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) node.RolePlayer {
 		f.core.Term = msg.Term()
 		switch msg.Type() {
 		case message.AppendEntriesType:
+			// logging
+			fmt.Print("follower: ")
 			return BecomeFollower(f, msg.OwnerAddr())
 		case message.RequestVoteType:
 			request := message.NewRequestVote(
@@ -26,11 +27,13 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) node.RolePlayer {
 					CurrTerm: msg.Term(),
 				},
 			)
-			// msg can be passed to function to remove if
-			response := f.ProcessRequestVote(request)
-			if response { // to return in ProcessQuery
-				return voter.BecomeVoter(f, msg.OwnerAddr())
-			}
+			// can be changed to if you see below, where response is bool value ProcessRequestVote must return
+			f.core.ProcessRequestVote(request)
+			BecomeFollower(f, msg.OwnerAddr())
+
+			/*if response { // to return in ProcessQuery
+				return BecomeVoter(f, msg.OwnerAddr())
+			}*/
 		default:
 			return nil
 		}
@@ -82,32 +85,6 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 	f.core.SendRaftMsg(
 		message.RaftMessage(ack),
 	)
-}
-
-func (f *Follower) ProcessRequestVote(request *message.RequestVote) bool {
-	ack := message.NewRequestAck(
-		&message.BaseRaftMessage{
-			Owner:    f.core.Addr,
-			Dest:     request.Owner,
-			CurrTerm: f.core.Term,
-		},
-	)
-	topterm := f.core.Entries[len(f.core.Entries) - 1].Term
-	if request.TopTerm < topterm {
-		return false
-	} else {
-		var topindex = len(f.core.Entries)
-		if (request.TopTerm == topterm) && (request.TopIndex < topindex) {
-			return false
-			// not sending request_ack may be simplified
-		} else {
-			// sending request_ack signalize that node voted for candidate
-			f.core.SendRaftMsg(
-				message.RaftMessage(ack),
-			)
-			return true
-		}
-	}
 }
 
 func (f *Follower) ApplyClientMessage(msg message.ClientMessage) {

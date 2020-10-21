@@ -1,9 +1,9 @@
-package leader
+package node
 
 import (
-	"../../node"
-	"../../message"
+	"../message"
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -13,13 +13,14 @@ type FollowerView struct {
 }
 
 type Leader struct {
-	core *node.RaftCore
+	core *RaftCore
 	ctx  context.Context
 	heartbeat *time.Ticker
 }
 
-func BecomeLeader(player node.RolePlayer) *Leader {
+func BecomeLeader(player RolePlayer) *Leader {
 	core := player.ReleaseNode()
+	fmt.Println(core.Addr, " became leader")
 	return &Leader{
 		core:      core,
 		heartbeat: time.NewTicker(core.Config.HeartbeatTimeout),
@@ -27,17 +28,21 @@ func BecomeLeader(player node.RolePlayer) *Leader {
 	}
 }
 
-func (l *Leader) ReleaseNode() *node.RaftCore {
+func (l *Leader) ReleaseNode() *RaftCore {
 	core := l.core
 	l.core = nil
 	return core
 }
 
-func (l *Leader) PlayRole() node.RolePlayer {
+func (l *Leader) PlayRole() RolePlayer {
 	for {
 		select {
 		case <-l.heartbeat.C:
-			///////////////////////////////
+			// отправляем heartbeat
+			prevTerm := 0 // no entries in leader case no need to assign newIdx as it's assigned by len(Entries)
+			if len(l.core.Entries) > 1 {
+				prevTerm = l.core.Entries[len(l.core.Entries) - 2].Term
+			}
 			for _,neighbor := range l.core.Neighbors {
 				msg := message.NewAppendEntries(
 					&message.BaseRaftMessage{
@@ -45,14 +50,12 @@ func (l *Leader) PlayRole() node.RolePlayer {
 					Dest: neighbor,
 					CurrTerm: l.core.Term,
 					},
-					l.core.Entries[len(l.core.Entries) - 2].Term,
+					prevTerm,
 					len(l.core.Entries),
 					make([]*message.Entry, 0),
 				)
 				go l.core.SendRaftMsg(message.RaftMessage(msg))
 			}
-			//////////////////////////////
-			// отправляем heartbeat
 		default:
 			if msg := l.core.TryRecvClientMsg(); msg != nil {
 

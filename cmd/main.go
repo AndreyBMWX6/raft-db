@@ -7,10 +7,10 @@ import (
     "../internal/config"
 	"../internal/message"
 	"../internal/node"
-	"../internal/node/candidate"
 )
 
 func main() {
+	// each node starts as a candidate
 	addr, err := net.ResolveUDPAddr("udp4", "127.0.0.1:800")
 	if err != nil {
 		log.Fatal(err)
@@ -51,7 +51,6 @@ func main() {
 		Entries:   nil,
 	}
 
-	var candidate = candidate.NewCandidate(raftNode)
+	var candidate = node.NewCandidate(raftNode)
 	node.RunRolePlayer(candidate)
 }
-
