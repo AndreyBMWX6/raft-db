@@ -27,13 +27,9 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 					CurrTerm: msg.Term(),
 				},
 			)
-			// can be changed to if you see below, where response is bool value ProcessRequestVote must return
 			f.core.ProcessRequestVote(request)
 			BecomeFollower(f, msg.OwnerAddr())
 
-			/*if response { // to return in ProcessQuery
-				return BecomeVoter(f, msg.OwnerAddr())
-			}*/
 		default:
 			return nil
 		}
