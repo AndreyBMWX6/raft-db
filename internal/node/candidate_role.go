@@ -2,7 +2,6 @@ package node
 
 import (
 	"fmt"
-	"net"
 	"time"
 
 	"../message"
@@ -12,7 +11,7 @@ type Candidate struct {
 	core     *RaftCore
 	timer    *time.Timer
 	maxVotes int
-	voters   map[net.Addr]struct{}
+	voters   map[string]struct{}
 }
 
 func BecomeCandidate(player RolePlayer) *Candidate {
@@ -28,7 +27,7 @@ func NewCandidate(core *RaftCore) *Candidate {
 		core:     core,
 		timer:    time.NewTimer(core.Config.VotingTimeout),
 		maxVotes: maxVotes,
-		voters:   make(map[net.Addr]struct{}, maxVotes),
+		voters:   make(map[string]struct{}, maxVotes),
 	}
 }
 
@@ -42,7 +41,7 @@ func (c *Candidate) ReleaseNode() *RaftCore {
 
 func (c *Candidate) PlayRole() RolePlayer {
 	// Votes for itself
-	c.voters[c.core.Addr] = struct{}{}
+	c.voters[c.core.Addr.String()] = struct{}{}
 
 	// implementation of parallel RequestVote
 	for _, neighbor := range c.core.Neighbors {

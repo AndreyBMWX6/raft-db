@@ -27,12 +27,12 @@ func NewAppendEntries(base *BaseRaftMessage,
 	}
 }
 
-func (e *AppendEntries) DestAddr() net.Addr {
-	return e.Dest
+func (e *AppendEntries) DestAddr() *net.UDPAddr {
+	return &e.Dest
 }
 
-func (e *AppendEntries) OwnerAddr() net.Addr {
-	return e.Owner
+func (e *AppendEntries) OwnerAddr() *net.UDPAddr {
+	return &e.Owner
 }
 
 func (e *AppendEntries) Term() int {

@@ -24,13 +24,13 @@ func main() {
 		"127.0.0.1:8005",
 	}
 
-	var neighbors []net.Addr
+	var neighbors []net.UDPAddr
 	for _, neighbor := range neighborStrings {
 		nborAddr, err := net.ResolveUDPAddr("udp4", neighbor)
 		if err != nil {
 			log.Fatal(err)
 		}
-		neighbors = append(neighbors, nborAddr)
+		neighbors = append(neighbors, *nborAddr)
 	}
 
 	var raftIn  = make(chan message.RaftMessage)
@@ -41,7 +41,7 @@ func main() {
 
 	var raftNode = &node.RaftCore{
 		Config:    config.NewConfig(),
-		Addr:      addr,
+		Addr:      *addr,
 		Neighbors: neighbors,
 		RaftIn:    raftIn,
 		RaftOut:   raftOut,

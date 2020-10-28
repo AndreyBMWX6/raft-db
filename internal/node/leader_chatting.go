@@ -24,8 +24,8 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 				l.core.Term = msg.Term()
 				request := message.NewRequestVote(
 					&message.BaseRaftMessage{
-						Owner:	  msg.OwnerAddr(),
-						Dest: 	  msg.DestAddr(),
+						Owner:	  *msg.OwnerAddr(),
+						Dest: 	  *msg.DestAddr(),
 						CurrTerm: msg.Term(),
 					},
 				)

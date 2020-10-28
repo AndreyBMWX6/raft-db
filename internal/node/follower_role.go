@@ -11,17 +11,17 @@ type Follower struct {
 	core *RaftCore
 
 	timer *time.Timer
-	leaderAddr net.Addr
+	leaderAddr net.UDPAddr
 }
 
-func BecomeFollower(player RolePlayer, leader net.Addr) *Follower {
+func BecomeFollower(player RolePlayer, leader *net.UDPAddr) *Follower {
 	core := player.ReleaseNode()
 	// logging
 	fmt.Println(core.Addr, " became follower")
 	return &Follower{
 		core:       core,
 		timer:      time.NewTimer(core.Config.FollowerTimeout),
-		leaderAddr: leader,
+		leaderAddr: *leader,
 	}
 }
 

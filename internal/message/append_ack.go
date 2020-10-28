@@ -15,12 +15,12 @@ func NewEntriesAck(base *BaseRaftMessage) *AppendAck {
 	}
 }
 
-func (aa *AppendAck) DestAddr() net.Addr {
-	return aa.Dest
+func (aa *AppendAck) DestAddr() *net.UDPAddr {
+	return &aa.Dest
 }
 
-func (aa *AppendAck) OwnerAddr() net.Addr {
-	return aa.Owner
+func (aa *AppendAck) OwnerAddr() *net.UDPAddr {
+	return &aa.Owner
 }
 
 func (aa *AppendAck) Term() int {

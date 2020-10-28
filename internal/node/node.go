@@ -33,8 +33,8 @@ func RunRolePlayer(player RolePlayer) {
 type RaftCore struct {
 	Config *config.Config
 
-	Addr net.Addr
-	Neighbors []net.Addr
+	Addr net.UDPAddr
+	Neighbors []net.UDPAddr
 
 	Term int
 	Entries []*message.Entry

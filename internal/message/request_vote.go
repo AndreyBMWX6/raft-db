@@ -15,12 +15,12 @@ func NewRequestVote(base *BaseRaftMessage) *RequestVote {
 	}
 }
 
-func (rv *RequestVote) DestAddr() net.Addr {
-	return rv.Dest
+func (rv *RequestVote) DestAddr() *net.UDPAddr {
+	return &rv.Dest
 }
 
-func (rv *RequestVote) OwnerAddr() net.Addr {
-	return rv.Owner
+func (rv *RequestVote) OwnerAddr() *net.UDPAddr {
+	return &rv.Owner
 }
 
 func (rv *RequestVote) Term() int {

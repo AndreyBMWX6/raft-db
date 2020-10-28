@@ -27,8 +27,8 @@ const (
 // Nodes communicate each other with
 // messages realizing that interface
 type RaftMessage interface {
-	OwnerAddr() net.Addr
-	DestAddr () net.Addr
+	OwnerAddr() *net.UDPAddr
+	DestAddr () *net.UDPAddr
 
 	Term() int
 	Type() int
@@ -47,7 +47,7 @@ type ClientMessage interface {
 
 // Any inter-node message bases on it structure
 type BaseRaftMessage struct {
-	Owner net.Addr
-	Dest  net.Addr
+	Owner net.UDPAddr
+	Dest  net.UDPAddr
 	CurrTerm int
 }

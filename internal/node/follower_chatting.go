@@ -22,8 +22,8 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 		case message.RequestVoteType:
 			request := message.NewRequestVote(
 				&message.BaseRaftMessage{
-					Owner:	  msg.OwnerAddr(),
-					Dest: 	  msg.DestAddr(),
+					Owner:	  *msg.OwnerAddr(),
+					Dest: 	  *msg.DestAddr(),
 					CurrTerm: msg.Term(),
 				},
 			)
@@ -37,7 +37,8 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 
 	switch msg.Type() {
 	case message.AppendEntriesType:
-		if msg.OwnerAddr() != f.leaderAddr {
+
+		if msg.OwnerAddr().String() != f.leaderAddr.String() {
 			return nil
 		}
 

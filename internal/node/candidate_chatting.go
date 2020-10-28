@@ -21,8 +21,8 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 			if msg.Term() > c.core.Term {
 				request := message.NewRequestVote(
 					&message.BaseRaftMessage{
-						Owner:	  msg.OwnerAddr(),
-						Dest: 	  msg.DestAddr(),
+						Owner:	  *msg.OwnerAddr(),
+						Dest: 	  *msg.DestAddr(),
 						CurrTerm: msg.Term(),
 					},
 				)
@@ -39,10 +39,10 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 
 	switch msg.Type() {
 	case message.VoteType:
-		if _, found := c.voters[msg.OwnerAddr()]; found {
+		if _, found := c.voters[msg.OwnerAddr().String()]; found {
 			return nil
 		} else {
-			c.voters[msg.OwnerAddr()] = struct{}{}
+			c.voters[msg.OwnerAddr().String()] = struct{}{}
 		}
 
 		if len(c.voters) >= c.maxVotes {

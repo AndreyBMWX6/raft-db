@@ -15,12 +15,12 @@ func NewRequestAck(base *BaseRaftMessage, voted bool) *RequestAck {
 	}
 }
 
-func (ra *RequestAck) DestAddr() net.Addr {
-	return ra.Dest
+func (ra *RequestAck) DestAddr() *net.UDPAddr {
+	return &ra.Dest
 }
 
-func (ra *RequestAck) OwnerAddr() net.Addr {
-	return ra.Owner
+func (ra *RequestAck) OwnerAddr() *net.UDPAddr {
+	return &ra.Owner
 }
 
 func (ra *RequestAck) Term() int {
