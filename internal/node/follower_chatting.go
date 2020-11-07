@@ -20,16 +20,22 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 			fmt.Print("follower: ")
 			return BecomeFollower(f, msg.OwnerAddr())
 		case message.RequestVoteType:
-			request := message.NewRequestVote(
-				&message.BaseRaftMessage{
-					Owner:	  *msg.OwnerAddr(),
-					Dest: 	  *msg.DestAddr(),
-					CurrTerm: msg.Term(),
-				},
-			)
-			f.core.ProcessRequestVote(request)
-			BecomeFollower(f, msg.OwnerAddr())
-
+			switch requestvote := msg.(type) {
+			case *message.RequestVote:
+				request := message.NewRequestVote(
+					&message.BaseRaftMessage{
+						Owner:    *msg.OwnerAddr(),
+						Dest:     *msg.DestAddr(),
+						CurrTerm: msg.Term(),
+					},
+					requestvote.TopIndex,
+					requestvote.TopTerm,
+				)
+				f.core.ProcessRequestVote(request)
+				return BecomeFollower(f, msg.OwnerAddr())
+			default:
+				log.Print("`RequestVoteMessage` expected, got another type")
+			}
 		default:
 			return nil
 		}

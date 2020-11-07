@@ -3,6 +3,7 @@ package node
 import (
 	"../message"
 	"fmt" // temporary implementation of logging cluster nodes condition and communication
+	"log"
 )
 
 func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
@@ -19,18 +20,26 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 			return BecomeFollower(c, msg.OwnerAddr())
 		case message.RequestVoteType:
 			if msg.Term() > c.core.Term {
-				request := message.NewRequestVote(
-					&message.BaseRaftMessage{
-						Owner:	  *msg.OwnerAddr(),
-						Dest: 	  *msg.DestAddr(),
-						CurrTerm: msg.Term(),
-					},
-				)
-				// 2 lower lines can be changed to BecomeVoter
-				c.core.ProcessRequestVote(request)
-				// logging
-				fmt.Print("candidate:")
-				return BecomeFollower(c, msg.OwnerAddr())
+				switch requestvote := msg.(type) {
+				case *message.RequestVote:
+					request := message.NewRequestVote(
+						&message.BaseRaftMessage{
+							Owner:    *msg.OwnerAddr(),
+							Dest:     *msg.DestAddr(),
+							CurrTerm: msg.Term(),
+						},
+						requestvote.TopIndex,
+						requestvote.TopTerm,
+					)
+					// should add initialization of TopIndex and TopTerm
+					// 2 lower lines can be changed to BecomeVoter
+					c.core.ProcessRequestVote(request)
+					// logging
+					fmt.Print("candidate:")
+					return BecomeFollower(c, msg.OwnerAddr())
+				default:
+					log.Print("`RequestVoteMessage` expected, got another type")
+				}
 			}
 		default:
 			return nil
@@ -38,7 +47,7 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 	}
 
 	switch msg.Type() {
-	case message.VoteType:
+	case message.RequestAckType:
 		if _, found := c.voters[msg.OwnerAddr().String()]; found {
 			return nil
 		} else {

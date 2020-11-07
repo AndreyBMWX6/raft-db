@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+message BaseRaftMessage {
+  string Owner = 1;
+  string Dest = 2;
+  int32 CurrTerm = 3;
+}
+
+message Entry {
+  int32 Term = 1;
+  bytes Query = 2;
+}
+
+message AppendEntries {
+  BaseRaftMessage msg = 1;
+  int32 PrevTerm = 2;
+  int32 NewIndex = 3;
+  repeated Entry Entries = 4;
+}
+
+message AppendAck {
+  BaseRaftMessage msg = 1;
+  bool Appended = 2;
+}
+
+message RequestVote {
+  BaseRaftMessage msg = 1;
+    int32 TopIndex = 2;
+    int32 TopTerm = 3;
+}
+
+message RequestAck {
+  BaseRaftMessage msg = 1;
+  bool Voted = 2;
+}

@@ -10,7 +10,7 @@ const (
 
 	// Pull Types
 	AppendAckType
-	VoteType
+	RequestAckType
 )
 
 // Client Message Types

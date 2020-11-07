@@ -28,6 +28,6 @@ func (ra *RequestAck) Term() int {
 }
 
 func (ra RequestAck) Type() int {
-	return VoteType
+	return RequestAckType
 }
 

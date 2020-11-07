@@ -9,9 +9,13 @@ type RequestVote struct {
 	TopTerm  int
 }
 
-func NewRequestVote(base *BaseRaftMessage) *RequestVote {
+func NewRequestVote(base *BaseRaftMessage,
+					topindex int,
+					topterm int) *RequestVote {
 	return &RequestVote{
 		BaseRaftMessage: *base,
+		TopIndex: topindex,
+		TopTerm: topterm,
 	}
 }
 

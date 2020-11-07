@@ -3,6 +3,7 @@ package node
 import (
 	"../message"
 	"fmt"
+	"log"
 )
 
 func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
@@ -20,17 +21,25 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 				return BecomeFollower(l, msg.OwnerAddr())
 			}
 		case message.RequestVoteType:
+
 			if msg.Term() > l.core.Term {
 				l.core.Term = msg.Term()
-				request := message.NewRequestVote(
+				switch requestvote := msg.(type) {
+				case *message.RequestVote:
+					request := message.NewRequestVote(
 					&message.BaseRaftMessage{
-						Owner:	  *msg.OwnerAddr(),
-						Dest: 	  *msg.DestAddr(),
+						Owner:    *msg.OwnerAddr(),
+						Dest:     *msg.DestAddr(),
 						CurrTerm: msg.Term(),
 					},
+					requestvote.TopIndex,
+					requestvote.TopTerm,
 				)
 				l.core.ProcessRequestVote(request)
 				return BecomeFollower(l, msg.OwnerAddr())
+				default:
+					log.Print("`RequestVoteMessage` expected, got another type")
+				}
 			}
 		default:
 			return nil

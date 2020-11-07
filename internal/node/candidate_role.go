@@ -44,13 +44,23 @@ func (c *Candidate) PlayRole() RolePlayer {
 	c.voters[c.core.Addr.String()] = struct{}{}
 
 	// implementation of parallel RequestVote
+
+
 	for _, neighbor := range c.core.Neighbors {
+		Topindex := len(c.core.Entries)
+		Topterm := 0
+		if Topindex != 0 {
+			Topterm = c.core.Entries[len(c.core.Entries) - 1].Term
+		}
+
 		msg := message.NewRequestVote(
 			&message.BaseRaftMessage{
 				Owner: c.core.Addr,
 				Dest: neighbor,
 				CurrTerm: c.core.Term,
-		},
+			},
+			Topindex,
+			Topterm,
 	)
 		msg.TopIndex = len(c.core.Entries)
 		// if no Entries, Topterm = 0
