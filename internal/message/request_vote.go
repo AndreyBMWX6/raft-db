@@ -5,13 +5,13 @@ import "net"
 type RequestVote struct {
 	BaseRaftMessage
 
-	TopIndex int
-	TopTerm  int
+	TopIndex uint32
+	TopTerm  uint32
 }
 
 func NewRequestVote(base *BaseRaftMessage,
-					topindex int,
-					topterm int) *RequestVote {
+					topindex uint32,
+					topterm uint32) *RequestVote {
 	return &RequestVote{
 		BaseRaftMessage: *base,
 		TopIndex: topindex,
@@ -27,7 +27,7 @@ func (rv *RequestVote) OwnerAddr() *net.UDPAddr {
 	return &rv.Owner
 }
 
-func (rv *RequestVote) Term() int {
+func (rv *RequestVote) Term() uint32 {
 	return rv.CurrTerm
 }
 

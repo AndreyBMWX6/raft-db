@@ -6,10 +6,11 @@ package manager
 // NODE1 <----RaftMessage----> RAFTMANAGER1 <------UDP------> RAFTMANAGER2 <----RaftMessage----> NODE2
 
 import (
-	"../message"
-	"encoding/binary"
+	"google.golang.org/protobuf/proto"
 	"log"
 	"net"
+	"../message"
+	"../net_message"
 )
 
 type RaftManager struct {
@@ -35,108 +36,145 @@ func (rm *RaftManager) RaftManagerProcessMessage(msg message.RaftMessage) {
 	for {
 		select {
 		case msg := <-rm.RaftIn:
-			// change Term type from int to avoid uint32 conversion()
-			Term := make([]byte, 4)
-			Type := make([]byte, 4)
-			binary.LittleEndian.PutUint32(Term, uint32(msg.Term()))
-			binary.LittleEndian.PutUint32(Type, uint32(msg.Type()))
-			buff := make([]byte, 0)
-			switch msg.Type() {
-			case message.AppendEntriesType:
-				switch entries := msg.(type) {
-				case *message.AppendEntries:
-					// term, type, prevterm, newidx, entries
-					buff = make([]byte, 16 + len(entries.Entries))
-					copy(buff, Term)
-					copy(buff, Type)
-					Prevterm := make([]byte, 4)
-					Newidx := make([]byte, 4)
-					Entries := make([]byte, len(entries.Entries))
-					binary.LittleEndian.PutUint32(Prevterm, uint32(entries.PrevTerm))
-					binary.LittleEndian.PutUint32(Newidx, uint32(entries.NewIndex))
-					copy(buff, Prevterm)
-					copy(buff, Newidx)
-					copy(buff, Entries)
-				default:
-					log.Print("`AppendEntriesMessage` expected, got another type")
-				}
-			case message.RequestVoteType:
-				switch requestvote := msg.(type) {
-				case *message.RequestVote:
-					// term, type, topindex, topterm
-					buff = make([]byte, 16)
-					copy(buff, Term)
-					copy(buff, Type)
-					Topindex := make([]byte, 4)
-					Topterm := make([]byte, 4)
-					binary.LittleEndian.PutUint32(Topindex, uint32(requestvote.TopIndex))
-					binary.LittleEndian.PutUint32(Topterm, uint32(requestvote.TopTerm))
-					copy(buff, Topindex)
-					copy(buff, Topterm)
+			// change Term type from int to avoid int32 conversion()
+			// initializing baseraftmessage
+			baseraftmessage := &net_messages.BaseRaftMessage{}
+			baseraftmessage.Owner = msg.OwnerAddr().String()
+			baseraftmessage.Dest = msg.DestAddr().String()
+			baseraftmessage.CurrTerm = int32(msg.Term())
 
-				default:
-					log.Print("`RequestVoteMessage` expected, got another type")
+			switch raftmessage := msg.(type) {
+			case *message.AppendEntries:
+				data := &net_messages.AppendEntries{}
+				// initializing data
+				data.Msg = baseraftmessage
+				data.PrevTerm = int32(raftmessage.PrevTerm)
+				data.NewIndex = int32(raftmessage.NewIndex)
+				Entries := make([]*net_messages.Entry, 0)
+				for _,entrie := range raftmessage.Entries {
+					Entrie := &net_messages.Entry{}
+					Entrie.Term = int32(entrie.Term)
+					Entrie.Query = entrie.Query
+					Entries = append(Entries, Entrie)
 				}
-			case message.AppendAckType:
-				switch appendack := msg.(type) {
-				case *message.AppendAck:
-					// term, type, appended
-					buff = make([]byte, 12)
-					copy(buff, Term)
-					copy(buff, Type)
-					appended_num := 0
-					if appendack.Appended {
-						appended_num = 1
+				data.Entries = Entries
+
+				// encrypting data
+				protodata, err := proto.Marshal(data)
+				if err != nil {
+					log.Fatal("marshaling error: ", err)
+					return
+				}
+
+				// sending UDP
+				if _, err := conn.WriteToUDP(protodata, msg.DestAddr()); err != nil {
+					panic(err)
+					return
+				}
+			case *message.RequestVote:
+				data := &net_messages.RequestVote{}
+				// initializing data
+				data.Msg = baseraftmessage
+				data.TopIndex = int32(raftmessage.TopIndex)
+				data.TopTerm = int32(raftmessage.TopTerm)
+
+				// encrypting data
+				protodata, err := proto.Marshal(data)
+				if err != nil {
+					log.Fatal("marshaling error: ", err)
+					return
+				}
+
+				// sending UDP
+				if _, err := conn.WriteToUDP(protodata, msg.DestAddr()); err != nil {
+					panic(err)
+					return
+				}
+			case *message.AppendAck:
+				data := &net_messages.AppendAck{}
+				// initializing data
+				data.Msg = baseraftmessage
+				data.Appended = raftmessage.Appended
+
+				// encrypting data
+				protodata, err := proto.Marshal(data)
+				if err != nil {
+					log.Fatal("marshaling error: ", err)
+					return
+				}
+
+				// sending UDP
+				if _, err := conn.WriteToUDP(protodata, msg.DestAddr()); err != nil {
+					panic(err)
+					return
+				}
+				case *message.RequestAck:
+					data := &net_messages.RequestAck{}
+					// initializing data
+					data.Msg = baseraftmessage
+					data.Voted = raftmessage.Voted
+
+					// encrypting data
+					protodata, err := proto.Marshal(data)
+					if err != nil {
+						log.Fatal("marshaling error: ", err)
+						return
 					}
-					appended := make([]byte, 4)
-					binary.LittleEndian.PutUint32(appended, uint32(appended_num))
-					copy(buff, appended)
-				default:
-					log.Print("`AppendAckMessage` expected, got another type")
-				}
-				case message.RequestAckType:
 
-			}
-
-			if _, err := conn.WriteToUDP(buff, msg.DestAddr()); err != nil {
-				panic(err)
-				return
-			}
-
+					// sending UDP
+					if _, err := conn.WriteToUDP(protodata, msg.DestAddr()); err != nil {
+						panic(err)
+						return
+					}
 			default:
-				recvBuff := make([]byte, 64)
-				if _, ownerAddr, err := conn.ReadFromUDP(recvBuff); err == nil {
-					udp_msg_term := int(binary.LittleEndian.Uint32(recvBuff[0:4]))
-					udp_msg_type := int(binary.LittleEndian.Uint32(recvBuff[4:8]))
+				log.Print("unexpected type of message")
+				}
 
-					switch udp_msg_type {
-					case message.AppendEntriesType:
-						Prevterm := int(binary.LittleEndian.Uint32(recvBuff[8:12]))
-						Newidx := int(binary.LittleEndian.Uint32(recvBuff[12:16]))
-						// implement Entries Initialization
-						//Entries := recvBuff[16:]
+		default:
+
+
+			/*
+				AppendEntries := net_messages.AppendEntries{}
+				AppendAck := net_messages.AppendAck{}
+				RequestVote := net_messages.RequestVote{}
+				RequestAck := net_messages.RequestAck{}
+
+				recvBuff := make([]byte, 1024)
+				if length, ownerAddr, err := conn.ReadFromUDP(recvBuff); err == nil {
+					data := recvBuff[:length]
+
+					err := proto.Unmarshal(data, &AppendEntries)
+					if err == nil {
 						message.NewAppendEntries(
 							&message.BaseRaftMessage{
-							Owner: *ownerAddr,
-							Dest: *myaddr,
-							CurrTerm: udp_msg_term,
+								Owner: ,
+								Dest: neighbor,
+								CurrTerm: l.core.Term,
 							},
-							Prevterm,
-							Newidx,
-							//Entries,
-							make([] *message.Entry, 0),
+							prevTerm,
+							len(l.core.Entries),
+							make([]*message.Entry, 0),
 						)
-					case message.RequestVoteType:
-						//appended_num := int(binary.LittleEndian.Uint32(recvBuff[8:12]))
+					}
 
-					case message.AppendAckType:
 
-					case message.RequestAckType:
+					err = proto.Unmarshal(data, &AppendAck)
+					if err == nil {
 
 					}
-				if err != nil {
-					panic(err)
-				}
+
+					err = proto.Unmarshal(data, &RequestVote)
+					if err == nil {
+
+					}
+
+					err = proto.Unmarshal(data, &RequestAck)
+					if err == nil {
+
+					}
+			*/
+			if err != nil {
+				panic(err)
 			}
 		}
 	}

@@ -30,7 +30,7 @@ type RaftMessage interface {
 	OwnerAddr() *net.UDPAddr
 	DestAddr () *net.UDPAddr
 
-	Term() int
+	Term() uint32
 	Type() int
 }
 
@@ -49,5 +49,5 @@ type ClientMessage interface {
 type BaseRaftMessage struct {
 	Owner net.UDPAddr
 	Dest  net.UDPAddr
-	CurrTerm int
+	CurrTerm uint32
 }

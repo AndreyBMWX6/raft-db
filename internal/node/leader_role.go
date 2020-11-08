@@ -39,7 +39,7 @@ func (l *Leader) PlayRole() RolePlayer {
 		select {
 		case <-l.heartbeat.C:
 			// отправляем heartbeat
-			prevTerm := 0 // no entries in leader case no need to assign newIdx as it's assigned by len(Entries)
+			var prevTerm uint32 = 0 // no entries in leader case no need to assign newIdx as it's assigned by len(Entries)
 			if len(l.core.Entries) > 1 {
 				prevTerm = l.core.Entries[len(l.core.Entries) - 2].Term
 			}
@@ -51,7 +51,7 @@ func (l *Leader) PlayRole() RolePlayer {
 					CurrTerm: l.core.Term,
 					},
 					prevTerm,
-					len(l.core.Entries),
+					uint32(len(l.core.Entries)),
 					make([]*message.Entry, 0),
 				)
 				go l.core.SendRaftMsg(message.RaftMessage(msg))

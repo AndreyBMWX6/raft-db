@@ -23,7 +23,7 @@ func (ra *RequestAck) OwnerAddr() *net.UDPAddr {
 	return &ra.Owner
 }
 
-func (ra *RequestAck) Term() int {
+func (ra *RequestAck) Term() uint32 {
 	return ra.CurrTerm
 }
 

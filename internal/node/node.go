@@ -36,7 +36,7 @@ type RaftCore struct {
 	Addr net.UDPAddr
 	Neighbors []net.UDPAddr
 
-	Term int
+	Term uint32
 	Entries []*message.Entry
 
 	// Raft IO
@@ -88,7 +88,7 @@ func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) {
 	)
 
 	// if no Entries, Topterm = 0
-	topterm := 0
+	var topterm uint32 = 0
 	if core.Entries != nil {
 		topterm = core.Entries[len(core.Entries) - 1].Term
 	}
@@ -96,7 +96,7 @@ func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) {
 		// made for clarity
 		ack.Voted = false
 	} else {
-		var topindex = len(core.Entries)
+		var topindex = uint32(len(core.Entries))
 		if (request.TopTerm == topterm) && (request.TopIndex < topindex) {
 			// made for clarity
 			ack.Voted = false

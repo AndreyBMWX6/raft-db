@@ -3,18 +3,18 @@ syntax = "proto3";
 message BaseRaftMessage {
   string Owner = 1;
   string Dest = 2;
-  int32 CurrTerm = 3;
+  uint32 CurrTerm = 3;
 }
 
 message Entry {
-  int32 Term = 1;
+  uint32 Term = 1;
   bytes Query = 2;
 }
 
 message AppendEntries {
   BaseRaftMessage msg = 1;
-  int32 PrevTerm = 2;
-  int32 NewIndex = 3;
+  uint32 PrevTerm = 2;
+  uint32 NewIndex = 3;
   repeated Entry Entries = 4;
 }
 
@@ -25,8 +25,8 @@ message AppendAck {
 
 message RequestVote {
   BaseRaftMessage msg = 1;
-    int32 TopIndex = 2;
-    int32 TopTerm = 3;
+    uint32 TopIndex = 2;
+    uint32 TopTerm = 3;
 }
 
 message RequestAck {

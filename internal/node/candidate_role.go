@@ -47,8 +47,8 @@ func (c *Candidate) PlayRole() RolePlayer {
 
 
 	for _, neighbor := range c.core.Neighbors {
-		Topindex := len(c.core.Entries)
-		Topterm := 0
+		var Topindex = uint32(len(c.core.Entries))
+		var Topterm uint32 = 0
 		if Topindex != 0 {
 			Topterm = c.core.Entries[len(c.core.Entries) - 1].Term
 		}
@@ -62,7 +62,7 @@ func (c *Candidate) PlayRole() RolePlayer {
 			Topindex,
 			Topterm,
 	)
-		msg.TopIndex = len(c.core.Entries)
+		//msg.TopIndex = uint32(len(c.core.Entries))
 		// if no Entries, Topterm = 0
 		if msg.TopIndex != 0 {
 			msg.TopTerm = c.core.Entries[len(c.core.Entries)-1].Term

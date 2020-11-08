@@ -26,13 +26,13 @@ func TestApplyRaftMessage(t *testing.T) {
 		"127.0.0.1:8005",
 	}
 
-	var neighbors []net.Addr
+	var neighbors []net.UDPAddr
 	for _, neighbor := range neighborStrings {
 		nborAddr, err := net.ResolveUDPAddr("udp4", neighbor)
 		if err != nil {
 			log.Fatal(err)
 		}
-		neighbors = append(neighbors, nborAddr)
+		neighbors = append(neighbors, *nborAddr)
 	}
 
 	var raftIn  = make(chan message.RaftMessage)
@@ -43,7 +43,7 @@ func TestApplyRaftMessage(t *testing.T) {
 
 	var raftNode = &node.RaftCore{
 		Config:    config.NewConfig(),
-		Addr:      addr,
+		Addr:      *addr,
 		Neighbors: neighbors,
 		RaftIn:    raftIn,
 		RaftOut:   raftOut,
@@ -63,10 +63,12 @@ func TestApplyRaftMessage(t *testing.T) {
 
 	lowermessage := message.NewRequestVote(
 		&message.BaseRaftMessage{
-			Owner: owner,
-			Dest: addr,
+			Owner: *owner,
+			Dest: *addr,
 			CurrTerm: 0, // lower than candidate term(1)
 		},
+		0,
+		0,
 	)
 	// empty EntriesLog
 	lowermessage.TopTerm = 0
@@ -108,7 +110,7 @@ func TestApplyRaftMessage(t *testing.T) {
 
 	result_addr := result.ReleaseNode().Addr
 	// addr is addres of ex-candidate
-	if result_addr != addr {
+	if result_addr.String() != addr.String() {
 		t.Error(
 			"For message term", equalmessage.CurrTerm,
 			"and candidate term", 1,

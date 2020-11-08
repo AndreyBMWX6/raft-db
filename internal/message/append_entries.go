@@ -3,21 +3,21 @@ package message
 import "net"
 
 type Entry struct {
-	Term int
+	Term uint32
 	Query []byte
 }
 
 type AppendEntries struct {
 	BaseRaftMessage
 
-	PrevTerm  int
-	NewIndex int
+	PrevTerm  uint32
+	NewIndex uint32
 	Entries  []*Entry
 }
 
 func NewAppendEntries(base *BaseRaftMessage,
-                      prevTerm,
-                      newIdx int,
+                      prevTerm uint32,
+                      newIdx uint32,
                       entries []*Entry) *AppendEntries {
 	return &AppendEntries{
 		BaseRaftMessage: *base,
@@ -35,7 +35,7 @@ func (e *AppendEntries) OwnerAddr() *net.UDPAddr {
 	return &e.Owner
 }
 
-func (e *AppendEntries) Term() int {
+func (e *AppendEntries) Term() uint32 {
 	return e.CurrTerm
 }
 

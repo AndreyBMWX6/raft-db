@@ -23,7 +23,7 @@ func (aa *AppendAck) OwnerAddr() *net.UDPAddr {
 	return &aa.Owner
 }
 
-func (aa *AppendAck) Term() int {
+func (aa *AppendAck) Term() uint32 {
 	return aa.CurrTerm
 }
 

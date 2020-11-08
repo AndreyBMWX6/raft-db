@@ -69,7 +69,7 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		},
 	)
 
-	if entries.NewIndex > len(f.core.Entries) {
+	if entries.NewIndex > uint32(len(f.core.Entries)) {
 		ack.Appended = false
 	} else {
 		var prevTerm = f.core.Entries[entries.NewIndex-1].Term
