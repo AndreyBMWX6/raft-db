@@ -1,9 +1,11 @@
 syntax = "proto3";
 
 message BaseRaftMessage {
-  string Owner = 1;
-  string Dest = 2;
-  uint32 CurrTerm = 3;
+  bytes Ownerip = 1;
+  uint32 Ownerport = 2;
+  bytes Dest = 3;
+  uint32 Destport = 4;
+  uint32 CurrTerm = 5;
 }
 
 message Entry {
