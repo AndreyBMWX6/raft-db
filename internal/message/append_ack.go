@@ -8,10 +8,10 @@ type AppendAck struct {
 	Appended bool
 }
 
-func NewEntriesAck(base *BaseRaftMessage) *AppendAck {
+func NewEntriesAck(base *BaseRaftMessage, appended bool) *AppendAck {
 	return &AppendAck{
 		BaseRaftMessage: *base,
-		Appended:    false,
+		Appended:    appended,
 	}
 }
 

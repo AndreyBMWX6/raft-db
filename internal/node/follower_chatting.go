@@ -67,6 +67,7 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 			Dest:     f.leaderAddr,
 			CurrTerm: f.core.Term,
 		},
+		false,
 	)
 
 	if entries.NewIndex > uint32(len(f.core.Entries)) {
