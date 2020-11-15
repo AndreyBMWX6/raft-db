@@ -1,7 +1,7 @@
 package manager
 
 // each separate node have own raft manager, that communicates by RaftMessages
-// RaftManageres communicate betwen each other by UDP protocol
+// RaftManagers communicate between each other by UDP protocol
 
 // NODE1 <----RaftMessage----> RAFTMANAGER1 <------UDP------> RAFTMANAGER2 <----RaftMessage----> NODE2
 
@@ -9,6 +9,8 @@ import (
 	"google.golang.org/protobuf/proto"
 	"log"
 	"net"
+
+	"../config"
 	"../message"
 	"../net_message"
 )
@@ -19,277 +21,175 @@ type RaftManager struct {
 	RaftOut chan<- message.RaftMessage
 }
 
-func (rm *RaftManager) RaftManagerProcessMessage() {
+func (rm *RaftManager) ProcessMessage() {
 	// Resolving address
-	myaddr, err := net.ResolveUDPAddr("udp4", "127.0.0.1:800")
-	if err != nil {
-		log.Fatal(err)
-	}
+	myAddr := config.NewConfig().Addr
 
 	// Build listening connections
-	conn, err := net.ListenUDP("udp", myaddr)
+	conn, err := net.ListenUDP("udp", &myAddr)
 	defer conn.Close()
 	if err != nil {
 		log.Println("Error: ", err)
 	}
+
+	go rm.ListenToUDP(conn)
 
 	for {
 		select {
 		case msg := <-rm.RaftIn:
 			// change Term type from int to avoid int32 conversion()
 			// initializing baseraftmessage
-			baseraftmessage := &net_messages.BaseRaftMessage{}
-			Ownerip := msg.OwnerAddr().IP
-			var Ownerport = uint32(msg.OwnerAddr().Port)
-			Destip := msg.DestAddr().IP
-			var Destport = uint32(msg.DestAddr().Port)
+			baseRaftMsg := &net_messages.BaseRaftMessage{}
+			ownerIp := msg.OwnerAddr().IP
+			var ownerPort = uint32(msg.OwnerAddr().Port)
+			destIp := msg.DestAddr().IP
+			var destPort = uint32(msg.DestAddr().Port)
 
-			baseraftmessage.Ownerip = Ownerip[len(Ownerip)-4:]
-			baseraftmessage.Ownerport = Ownerport
-			baseraftmessage.Dest = Destip[len(Destip)-4:]
-			baseraftmessage.Destport = Destport
-			baseraftmessage.CurrTerm = msg.Term()
+			baseRaftMsg.Ownerip = ownerIp[len(ownerIp)-4:]
+			baseRaftMsg.Ownerport = ownerPort
+			baseRaftMsg.Dest = destIp[len(destIp)-4:]
+			baseRaftMsg.Destport = destPort
+			baseRaftMsg.CurrTerm = msg.Term()
 
-			switch raftmessage := msg.(type) {
+			switch raftMsg := msg.(type) {
 			case *message.AppendEntries:
 				data := &net_messages.AppendEntries{}
 				// initializing data
-				data.Msg = baseraftmessage
-				data.PrevTerm = raftmessage.PrevTerm
-				data.NewIndex = raftmessage.NewIndex
-				Entries := make([]*net_messages.Entry, 0)
-				for _, entrie := range raftmessage.Entries {
-					Entrie := &net_messages.Entry{}
-					Entrie.Term = entrie.Term
-					Entrie.Query = entrie.Query
-					Entries = append(Entries, Entrie)
+				data.Msg = baseRaftMsg
+				data.PrevTerm = raftMsg.PrevTerm
+				data.NewIndex = raftMsg.NewIndex
+				entries := make([]*net_messages.Entry, 0)
+				for _, entry := range raftMsg.Entries {
+					Entry := &net_messages.Entry{}
+					Entry.Term = entry.Term
+					Entry.Query = entry.Query
+					entries = append(entries, Entry)
 				}
-				data.Entries = Entries
+				data.Entries = entries
 
 				// encrypting data
-				protodata, err := proto.Marshal(data)
+				protoData, err := proto.Marshal(data)
 				if err != nil {
 					log.Fatal("marshaling error: ", err)
 					return
 				}
 
 				// adding message type to message
-				var msgtype uint8 = message.AppendEntriesType
-				udpmessage := make([]byte, 1)
-				udpmessage[0] = msgtype
-				udpmessage = append(udpmessage, protodata...)
+				var msgType uint8 = message.AppendEntriesType
+				udpMsg := make([]byte, 1)
+				udpMsg[0] = msgType
+				udpMsg = append(udpMsg, protoData...)
 
 				// sending UDP
-				if _, err := conn.WriteToUDP(udpmessage, msg.DestAddr()); err != nil {
+				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
 					panic(err)
 					return
 				}
 			case *message.RequestVote:
 				data := &net_messages.RequestVote{}
 				// initializing data
-				data.Msg = baseraftmessage
-				data.TopIndex = raftmessage.TopIndex
-				data.TopTerm = raftmessage.TopTerm
+				data.Msg = baseRaftMsg
+				data.TopIndex = raftMsg.TopIndex
+				data.TopTerm = raftMsg.TopTerm
 
 				// encrypting data
-				protodata, err := proto.Marshal(data)
+				protoData, err := proto.Marshal(data)
 				if err != nil {
 					log.Fatal("marshaling error: ", err)
 					return
 				}
 
 				// adding message type to message
-				var msgtype uint8 = message.RequestVoteType
-				udpmessage := make([]byte, 1)
-				udpmessage[0] = msgtype
-				udpmessage = append(udpmessage, protodata...)
+				var msgType uint8 = message.RequestVoteType
+				udpMsg := make([]byte, 1)
+				udpMsg[0] = msgType
+				udpMsg = append(udpMsg, protoData...)
 
 				// sending UDP
-				if _, err := conn.WriteToUDP(protodata, msg.DestAddr()); err != nil {
+				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
 					panic(err)
 					return
 				}
 			case *message.AppendAck:
 				data := &net_messages.AppendAck{}
 				// initializing data
-				data.Msg = baseraftmessage
-				data.Appended = raftmessage.Appended
+				data.Msg = baseRaftMsg
+				data.Appended = raftMsg.Appended
 
 				// encrypting data
-				protodata, err := proto.Marshal(data)
+				protoData, err := proto.Marshal(data)
 				if err != nil {
 					log.Fatal("marshaling error: ", err)
 					return
 				}
 
 				// adding message type to message
-				var msgtype uint8 = message.AppendAckType
-				udpmessage := make([]byte, 1)
-				udpmessage[0] = msgtype
-				udpmessage = append(udpmessage, protodata...)
+				var msgType uint8 = message.AppendAckType
+				udpMsg := make([]byte, 1)
+				udpMsg[0] = msgType
+				udpMsg = append(udpMsg, protoData...)
 
 				// sending UDP
-				if _, err := conn.WriteToUDP(protodata, msg.DestAddr()); err != nil {
+				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
 					panic(err)
 					return
 				}
 			case *message.RequestAck:
 				data := &net_messages.RequestAck{}
 				// initializing data
-				data.Msg = baseraftmessage
-				data.Voted = raftmessage.Voted
+				data.Msg = baseRaftMsg
+				data.Voted = raftMsg.Voted
 
 				// encrypting data
-				protodata, err := proto.Marshal(data)
+				protoData, err := proto.Marshal(data)
 				if err != nil {
 					log.Fatal("marshaling error: ", err)
 					return
 				}
 
 				// adding message type to message
-				var msgtype uint8 = message.RequestAckType
-				udpmessage := make([]byte, 1)
-				udpmessage[0] = msgtype
-				udpmessage = append(udpmessage, protodata...)
+				var msgType uint8 = message.RequestAckType
+				udpMsg := make([]byte, 1)
+				udpMsg[0] = msgType
+				udpMsg = append(udpMsg, protoData...)
 
 				// sending UDP
-				if _, err := conn.WriteToUDP(protodata, msg.DestAddr()); err != nil {
+				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
 					panic(err)
 					return
 				}
 			default:
 				log.Print("unexpected type of message")
 			}
-
 		default:
-			recvBuff := make([]byte, 1024)
-			if length, ownerAddr, err := conn.ReadFromUDP(recvBuff); err == nil {
-				data := recvBuff[1:length]
-				switch recvBuff[0] {
-				case uint8(message.AppendEntriesType):
-					AppendEntries := net_messages.AppendEntries{}
-					err := proto.Unmarshal(data, &AppendEntries)
-					if err == nil {
-						// converting values
-						Destip := net.IPv4(
-							AppendEntries.Msg.Ownerip[0],
-							AppendEntries.Msg.Ownerip[1],
-							AppendEntries.Msg.Ownerip[2],
-							AppendEntries.Msg.Ownerip[3])
-						Destudp := net.UDPAddr{
-							IP:   Destip,
-							Port: int(AppendEntries.Msg.Destport),
-						}
-						Entries := make([]*message.Entry, 0)
-						for _, protoentrie := range AppendEntries.Entries {
-							entrie := &message.Entry{
-								protoentrie.Term,
-								protoentrie.Query,
-							}
-							Entries = append(Entries, entrie)
-						}
+		}
+	}
+}
 
-						message.NewAppendEntries(
-							&message.BaseRaftMessage{
-								Owner:    *ownerAddr,
-								Dest:     Destudp,
-								CurrTerm: AppendEntries.Msg.CurrTerm,
-							},
-							AppendEntries.PrevTerm,
-							AppendEntries.NewIndex,
-							Entries,
-						)
-					}
-					if err != nil {
-						log.Fatal("unmarshaling error: ", err)
-					}
-				case uint8(message.AppendAckType):
-					AppendAck := net_messages.AppendAck{}
-					err := proto.Unmarshal(data, &AppendAck)
-					if err == nil {
-						// converting values
-						Destip := net.IPv4(
-							AppendAck.Msg.Ownerip[0],
-							AppendAck.Msg.Ownerip[1],
-							AppendAck.Msg.Ownerip[2],
-							AppendAck.Msg.Ownerip[3])
-						Destudp := net.UDPAddr{
-							IP:   Destip,
-							Port: int(AppendAck.Msg.Destport),
-						}
+func (rm *RaftManager) ListenToUDP(conn *net.UDPConn) {
+	recvBuff := make([]byte, 1024)
+	for {
+		if length, _, err := conn.ReadFromUDP(recvBuff); err == nil {
+			data := recvBuff[1:length]
+			switch recvBuff[0] {
+			case uint8(message.AppendEntriesType):
+				var appendEntries *message.AppendEntries
+				rm.RaftOut <- appendEntries.Unmarshal(data)
+			case uint8(message.AppendAckType):
+				var appendAck *message.AppendAck
+				rm.RaftOut <- appendAck.Unmarshal(data)
+			case uint8(message.RequestVoteType):
+				var requestVote *message.RequestVote
+				rm.RaftOut <- requestVote.Unmarshal(data)
+			case uint8(message.RequestAckType):
+				var requestAck *message.RequestAck
+				rm.RaftOut <- requestAck.Unmarshal(data)
+			default:
 
-						message.NewEntriesAck(
-							&message.BaseRaftMessage{
-								Owner:    *ownerAddr,
-								Dest:     Destudp,
-								CurrTerm: AppendAck.Msg.CurrTerm,
-							},
-							AppendAck.Appended,
-						)
-					}
-					if err != nil {
-						log.Fatal("unmarshaling error: ", err)
-					}
-				case uint8(message.RequestVoteType):
-					RequestVote := net_messages.RequestVote{}
-					err := proto.Unmarshal(data, &RequestVote)
-					if err == nil {
-						// converting values
-						Destip := net.IPv4(
-							RequestVote.Msg.Ownerip[0],
-							RequestVote.Msg.Ownerip[1],
-							RequestVote.Msg.Ownerip[2],
-							RequestVote.Msg.Ownerip[3])
-						Destudp := net.UDPAddr{
-							IP:   Destip,
-							Port: int(RequestVote.Msg.Destport),
-						}
+			}
 
-						message.NewRequestVote(
-							&message.BaseRaftMessage{
-								Owner:    *ownerAddr,
-								Dest:     Destudp,
-								CurrTerm: RequestVote.Msg.CurrTerm,
-							},
-							RequestVote.TopIndex,
-							RequestVote.TopTerm,
-						)
-					}
-					if err != nil {
-						log.Fatal("unmarshaling error: ", err)
-					}
-				case uint8(message.RequestAckType):
-					RequestAck := net_messages.RequestAck{}
-					err := proto.Unmarshal(data, &RequestAck)
-					if err == nil {
-						// converting values
-						Destip := net.IPv4(
-							RequestAck.Msg.Ownerip[0],
-							RequestAck.Msg.Ownerip[1],
-							RequestAck.Msg.Ownerip[2],
-							RequestAck.Msg.Ownerip[3])
-						Destudp := net.UDPAddr{
-							IP:   Destip,
-							Port: int(RequestAck.Msg.Destport),
-						}
-
-						message.NewRequestAck(
-							&message.BaseRaftMessage{
-								Owner:    *ownerAddr,
-								Dest:     Destudp,
-								CurrTerm: RequestAck.Msg.CurrTerm,
-							},
-							RequestAck.Voted,
-						)
-					}
-					if err != nil {
-						log.Fatal("unmarshaling error: ", err)
-					}
-				}
-
-				if err != nil {
-					panic(err)
-				}
+			if err != nil {
+				panic(err)
 			}
 		}
 	}

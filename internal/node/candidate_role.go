@@ -1,7 +1,8 @@
 package node
 
 import (
-	"fmt"
+	"log"
+	"math/rand"
 	"time"
 
 	"../message"
@@ -16,8 +17,6 @@ type Candidate struct {
 
 func BecomeCandidate(player RolePlayer) *Candidate {
 	core := player.ReleaseNode()
-	// logging
-	fmt.Println(core.Addr, " became candidate")
 	return NewCandidate(core)
 }
 
@@ -25,10 +24,11 @@ func NewCandidate(core *RaftCore) *Candidate {
 	maxVotes := (len(core.Neighbors)+1)/2
 	return &Candidate{
 		core:     core,
-		timer:    time.NewTimer(core.Config.VotingTimeout),
+		timer:    time.NewTimer(time.Duration(rand.Intn(1000) + 100)*time.Millisecond),
 		maxVotes: maxVotes,
 		voters:   make(map[string]struct{}, maxVotes),
 	}
+
 }
 
 func (c *Candidate) ReleaseNode() *RaftCore {
@@ -44,45 +44,45 @@ func (c *Candidate) PlayRole() RolePlayer {
 	c.voters[c.core.Addr.String()] = struct{}{}
 
 	// implementation of parallel RequestVote
-
-
-	for _, neighbor := range c.core.Neighbors {
-		var Topindex = uint32(len(c.core.Entries))
-		var Topterm uint32 = 0
-		if Topindex != 0 {
-			Topterm = c.core.Entries[len(c.core.Entries) - 1].Term
+	for _, neighbour := range c.core.Neighbors {
+		var topIndex = uint32(len(c.core.Entries))
+		var topTerm uint32 = 0
+		if topIndex != 0 {
+			topTerm = c.core.Entries[len(c.core.Entries) - 1].Term
 		}
 
 		msg := message.NewRequestVote(
 			&message.BaseRaftMessage{
-				Owner: c.core.Addr,
-				Dest: neighbor,
+				Owner:    c.core.Addr,
+				Dest:     neighbour,
 				CurrTerm: c.core.Term,
 			},
-			Topindex,
-			Topterm,
+			topIndex,
+			topTerm,
 	)
 		//msg.TopIndex = uint32(len(c.core.Entries))
-		// if no Entries, Topterm = 0
+		// if no Entries, topTerm = 0
 		if msg.TopIndex != 0 {
 			msg.TopTerm = c.core.Entries[len(c.core.Entries)-1].Term
 		} else {
 			msg.TopTerm = 0
 		}
+
+		log.Println("Node:", msg.Owner.String(), " send RequestVote to Node:", msg.Dest.String())
 		go c.core.SendRaftMsg(msg)
 	}
 
 	for {
 		select {
 		case <-c.timer.C:
+			log.Println("voting time is out")
+			log.Println("[candidate -> candidate]")
 			return BecomeCandidate(c)
-		default:
-
-			if msg := c.core.TryRecvRaftMsg(); msg != nil {
-				if nextRole := c.ApplyRaftMessage(msg); nextRole != nil {
-					return nextRole
-				}
+		case msg := <-c.core.RaftIn:
+			if nextRole := c.ApplyRaftMessage(msg); nextRole != nil {
+				return nextRole
 			}
+		default:
 		}
 	}
 }

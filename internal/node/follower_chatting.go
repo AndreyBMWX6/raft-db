@@ -1,7 +1,6 @@
 package node
 
 import (
-	"fmt"
 	"log"
 
 	"../message"
@@ -16,11 +15,9 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 		f.core.Term = msg.Term()
 		switch msg.Type() {
 		case message.AppendEntriesType:
-			// logging
-			fmt.Print("follower: ")
-			return BecomeFollower(f, msg.OwnerAddr())
+			return RefreshFollower(f)
 		case message.RequestVoteType:
-			switch requestvote := msg.(type) {
+			switch requestVote := msg.(type) {
 			case *message.RequestVote:
 				request := message.NewRequestVote(
 					&message.BaseRaftMessage{
@@ -28,10 +25,11 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 						Dest:     *msg.DestAddr(),
 						CurrTerm: msg.Term(),
 					},
-					requestvote.TopIndex,
-					requestvote.TopTerm,
+					requestVote.TopIndex,
+					requestVote.TopTerm,
 				)
 				f.core.ProcessRequestVote(request)
+				log.Println("[follower  -> follower ]")
 				return BecomeFollower(f, msg.OwnerAddr())
 			default:
 				log.Print("`RequestVoteMessage` expected, got another type")
@@ -86,6 +84,7 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		}
 	}
 
+	log.Println("Node:", ack.Owner.String(), " send EntriesAck to Node:", ack.Dest.String())
 	f.core.SendRaftMsg(
 		message.RaftMessage(ack),
 	)

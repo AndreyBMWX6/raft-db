@@ -32,6 +32,7 @@ type RaftMessage interface {
 
 	Term() uint32
 	Type() int
+	Unmarshal([]byte) RaftMessage
 }
 
 // Inter-client Message Type

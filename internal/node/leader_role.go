@@ -1,10 +1,11 @@
 package node
 
 import (
-	"../message"
 	"context"
-	"fmt"
+	"log"
 	"time"
+
+	"../message"
 )
 
 type FollowerView struct {
@@ -20,7 +21,6 @@ type Leader struct {
 
 func BecomeLeader(player RolePlayer) *Leader {
 	core := player.ReleaseNode()
-	fmt.Println(core.Addr, " became leader")
 	return &Leader{
 		core:      core,
 		heartbeat: time.NewTicker(core.Config.HeartbeatTimeout),
@@ -38,22 +38,31 @@ func (l *Leader) PlayRole() RolePlayer {
 	for {
 		select {
 		case <-l.heartbeat.C:
-			// отправляем heartbeat
-			var prevTerm uint32 = 0 // no entries in leader case no need to assign newIdx as it's assigned by len(Entries)
+			// sending heartbeat
+			// no entries in leader case no need to assign newIdx as it's assigned by len(Entries)
+			var prevTerm uint32 = 0
 			if len(l.core.Entries) > 1 {
 				prevTerm = l.core.Entries[len(l.core.Entries) - 2].Term
 			}
-			for _,neighbor := range l.core.Neighbors {
+			for _, neighbour := range l.core.Neighbors {
 				msg := message.NewAppendEntries(
 					&message.BaseRaftMessage{
-					Owner: l.core.Addr,
-					Dest: neighbor,
+					Owner:    l.core.Addr,
+					Dest:     neighbour,
 					CurrTerm: l.core.Term,
 					},
 					prevTerm,
 					uint32(len(l.core.Entries)),
 					make([]*message.Entry, 0),
 				)
+				var msgType string
+				if len(msg.Entries) == 0 {
+					msgType = "Heartbeat"
+				} else {
+					msgType = "AppendEntries"
+				}
+
+					log.Println("Node:", msg.Owner.String(), " send ", msgType, " to Node:", msg.Dest.String())
 				go l.core.SendRaftMsg(message.RaftMessage(msg))
 			}
 
@@ -61,7 +70,8 @@ func (l *Leader) PlayRole() RolePlayer {
 			if msg := l.core.TryRecvClientMsg(); msg != nil {
 				// as heartbeat, but with data
 			}
-			if msg := l.core.TryRecvRaftMsg(); msg != nil {
+			var msg message.RaftMessage
+			if l.core.TryRecvRaftMsg(msg); msg != nil {
 
 			}
 		}

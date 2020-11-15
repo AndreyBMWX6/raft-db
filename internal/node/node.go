@@ -3,6 +3,7 @@ package node
 import (
 	"../config"
 	"../message"
+	"log"
 	"net"
 	"time"
 )
@@ -48,14 +49,48 @@ type RaftCore struct {
 	ClientOut chan<- message.ClientMessage
 }
 
+// may be change value initialization to address
+func NewRaftCore() *RaftCore {
+	cfg := config.NewConfig()
+	return &RaftCore{
+		Config:    cfg,
+		Addr:      cfg.Addr,
+		Neighbors: cfg.Neighbors,
+		Term:      cfg.Term,
+		Entries:   cfg.Entries,
+		RaftIn:    cfg.RaftIn,
+		RaftOut:   cfg.RaftOut,
+		ClientIn:  cfg.ClientIn,
+		ClientOut: cfg.ClientOut,
+	}
+}
+
 // Message receivers wrappers
 // Here there are message receiving logics
-func (n *RaftCore) TryRecvRaftMsg() message.RaftMessage {
+func (n *RaftCore) TryRecvRaftMsg(raftMsg message.RaftMessage) {
 	select {
 	case msg := <-n.RaftIn:
-		return msg
-	default:
-		return nil
+		var msgType string
+		switch msg.Type() {
+		case message.AppendEntriesType:
+			switch appendEntries := msg.(type) {
+			case *message.AppendEntries:
+				if len(appendEntries.Entries) == 0 {
+					msgType = "Heartbeat"
+				} else {
+					msgType = "AppendEntries"
+				}
+			}
+		case message.RequestVoteType:
+			msgType = "RequestVote"
+		case message.AppendAckType:
+			msgType = "AppendAck"
+		case message.RequestAckType:
+			msgType = "RequestAck"
+		}
+		log.Println("Node:", msg.DestAddr().String()," got ", msgType,
+			" from Node:", msg.OwnerAddr().String())
+		raftMsg = msg
 	}
 }
 
@@ -88,16 +123,16 @@ func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) {
 	)
 
 	// if no Entries, Topterm = 0
-	var topterm uint32 = 0
+	var topTerm uint32 = 0
 	if core.Entries != nil {
-		topterm = core.Entries[len(core.Entries) - 1].Term
+		topTerm = core.Entries[len(core.Entries) - 1].Term
 	}
-	if request.TopTerm < topterm {
+	if request.TopTerm < topTerm {
 		// made for clarity
 		ack.Voted = false
 	} else {
-		var topindex = uint32(len(core.Entries))
-		if (request.TopTerm == topterm) && (request.TopIndex < topindex) {
+		var topIndex = uint32(len(core.Entries))
+		if (request.TopTerm == topTerm) && (request.TopIndex < topIndex) {
 			// made for clarity
 			ack.Voted = false
 		} else {
@@ -105,6 +140,7 @@ func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) {
 		}
 	}
 
+	log.Println("Node:", ack.Owner.String(), " send RequestAck to Node:", ack.Dest.String())
 	core.SendRaftMsg(
 		message.RaftMessage(ack),
 	)

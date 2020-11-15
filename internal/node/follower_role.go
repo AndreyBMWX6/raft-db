@@ -1,9 +1,11 @@
 package node
 
 import (
-	"fmt"
+	"log"
 	"net"
 	"time"
+
+	"../message"
 )
 
 // Follower follows current Leader
@@ -16,13 +18,16 @@ type Follower struct {
 
 func BecomeFollower(player RolePlayer, leader *net.UDPAddr) *Follower {
 	core := player.ReleaseNode()
-	// logging
-	fmt.Println(core.Addr, " became follower")
 	return &Follower{
 		core:       core,
 		timer:      time.NewTimer(core.Config.FollowerTimeout),
 		leaderAddr: *leader,
 	}
+}
+
+func RefreshFollower(f *Follower) *Follower{
+	f.timer = time.NewTimer(f.core.Config.FollowerTimeout)
+	return f
 }
 
 func (f *Follower) ReleaseNode() *RaftCore {
@@ -38,14 +43,15 @@ func (f *Follower) PlayRole() RolePlayer {
 	for {
 		select {
 		case <-f.timer.C:
-			// logging
-			fmt.Print("follower: ")
+			log.Println("follower time is out")
+			log.Println("[follower  -> candidate]")
 			return BecomeCandidate(f)
 		default:
 			if msg := f.core.TryRecvClientMsg(); msg != nil {
 				f.ApplyClientMessage(msg)
 			}
-			if msg := f.core.TryRecvRaftMsg(); msg != nil {
+			var msg message.RaftMessage
+			if  f.core.TryRecvRaftMsg(msg); msg != nil {
 				if nextRole := f.ApplyRaftMessage(msg); msg != nil {
 					return nextRole
 				}
