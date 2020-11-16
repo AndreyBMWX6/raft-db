@@ -18,6 +18,7 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 			return BecomeFollower(c, msg.OwnerAddr())
 		case message.RequestVoteType:
 			if msg.Term() > c.core.Term {
+				c.core.Term = msg.Term()
 				switch requestVote := msg.(type) {
 				case *message.RequestVote:
 					request := message.NewRequestVote(

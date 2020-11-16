@@ -78,11 +78,16 @@ func (c *Candidate) PlayRole() RolePlayer {
 			log.Println("voting time is out")
 			log.Println("[candidate -> candidate]")
 			return BecomeCandidate(c)
-		case msg := <-c.core.RaftIn:
-			if nextRole := c.ApplyRaftMessage(msg); nextRole != nil {
-				return nextRole
-			}
+
 		default:
+			//if msg := c.core.TryRecvClientMsg(); msg != nil {
+				//с.ApplyClientMessage(msg)
+			//}
+			if  msg := c.core.TryRecvRaftMsg(); msg != nil {
+				if nextRole := c.ApplyRaftMessage(msg); nextRole != nil {
+					return nextRole
+				}
+			}
 		}
 	}
 }

@@ -67,39 +67,45 @@ func NewRaftCore() *RaftCore {
 
 // Message receivers wrappers
 // Here there are message receiving logics
-func (n *RaftCore) TryRecvRaftMsg(raftMsg message.RaftMessage) {
-	select {
-	case msg := <-n.RaftIn:
-		var msgType string
-		switch msg.Type() {
-		case message.AppendEntriesType:
-			switch appendEntries := msg.(type) {
-			case *message.AppendEntries:
-				if len(appendEntries.Entries) == 0 {
-					msgType = "Heartbeat"
-				} else {
-					msgType = "AppendEntries"
+func (n *RaftCore) TryRecvRaftMsg() message.RaftMessage {
+	for {
+		select {
+		case msg := <-n.RaftIn:
+			var msgType string
+			switch msg.Type() {
+			case message.AppendEntriesType:
+				switch appendEntries := msg.(type) {
+				case *message.AppendEntries:
+					if len(appendEntries.Entries) == 0 {
+						msgType = "Heartbeat"
+					} else {
+						msgType = "AppendEntries"
+					}
 				}
+			case message.RequestVoteType:
+				msgType = "RequestVote"
+			case message.AppendAckType:
+				msgType = "AppendAck"
+			case message.RequestAckType:
+				msgType = "RequestAck"
 			}
-		case message.RequestVoteType:
-			msgType = "RequestVote"
-		case message.AppendAckType:
-			msgType = "AppendAck"
-		case message.RequestAckType:
-			msgType = "RequestAck"
+			log.Println("Node:", msg.DestAddr().String(), " got ", msgType,
+				" from Node:", msg.OwnerAddr().String())
+			return msg
+		default:
+			return nil
 		}
-		log.Println("Node:", msg.DestAddr().String()," got ", msgType,
-			" from Node:", msg.OwnerAddr().String())
-		raftMsg = msg
 	}
 }
 
 func (n *RaftCore) TryRecvClientMsg() message.ClientMessage {
-	select {
-	case msg := <-n.ClientIn:
-		return msg
-	default:
-		return nil
+	for {
+		select {
+		case msg := <-n.ClientIn:
+			return msg
+		default:
+			return nil
+		}
 	}
 }
 

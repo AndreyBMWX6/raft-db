@@ -70,8 +70,7 @@ func (l *Leader) PlayRole() RolePlayer {
 			if msg := l.core.TryRecvClientMsg(); msg != nil {
 				// as heartbeat, but with data
 			}
-			var msg message.RaftMessage
-			if l.core.TryRecvRaftMsg(msg); msg != nil {
+			if msg := l.core.TryRecvRaftMsg(); msg != nil {
 
 			}
 		}

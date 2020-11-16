@@ -4,8 +4,6 @@ import (
 	"log"
 	"net"
 	"time"
-
-	"../message"
 )
 
 // Follower follows current Leader
@@ -50,8 +48,7 @@ func (f *Follower) PlayRole() RolePlayer {
 			if msg := f.core.TryRecvClientMsg(); msg != nil {
 				f.ApplyClientMessage(msg)
 			}
-			var msg message.RaftMessage
-			if  f.core.TryRecvRaftMsg(msg); msg != nil {
+			if  msg := f.core.TryRecvRaftMsg(); msg != nil {
 				if nextRole := f.ApplyRaftMessage(msg); msg != nil {
 					return nextRole
 				}
