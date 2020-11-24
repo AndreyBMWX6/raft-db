@@ -18,6 +18,21 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 				log.Println("[leader:", l.core.Term, "   -> follower:", msg.Term(), " ]")
 				l.core.Term = msg.Term()
 				return BecomeFollower(l, msg.OwnerAddr())
+			} else {
+				switch entries := msg.(type) {
+				case *message.AppendEntries:
+					entrTopTerm := entries.Entries[entries.NewIndex - 1].Term
+					coreTopTerm := l.core.Entries[len(l.core.Entries)].Term
+					if entrTopTerm > coreTopTerm {
+						return BecomeFollower(l, msg.OwnerAddr())
+					} else if entrTopTerm == coreTopTerm && len(entries.Entries) > len(l.core.Entries) {
+						return BecomeFollower(l, msg.OwnerAddr())
+					}
+					return nil
+
+				default:
+					log.Print("`AppendEntriesMessage` expected, got another type")
+				}
 			}
 		case message.RequestVoteType:
 			if msg.Term() > l.core.Term {

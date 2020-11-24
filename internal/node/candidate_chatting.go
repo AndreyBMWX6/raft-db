@@ -31,7 +31,6 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 						requestVote.TopIndex,
 						requestVote.TopTerm,
 					)
-					//log.Println("[candidate:", c.core.Term, " -> follower:", msg.Term(), " ]")
 					c.core.Term = msg.Term()
 					c.core.ProcessRequestVote(request)
 					c.timer = time.NewTimer(c.core.Config.HeartbeatTimeout)

@@ -16,7 +16,6 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 		f.core.Term = msg.Term()
 		switch msg.Type() {
 		case message.AppendEntriesType:
-			log.Println("[follower:", oldFollowerTerm, "  -> follower:", msg.Term(), " ]")
 			return RefreshFollower(f)
 		case message.RequestVoteType:
 			switch requestVote := msg.(type) {
@@ -70,7 +69,7 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		false,
 	)
 
-	if entries.NewIndex > uint32(len(f.core.Entries)) {
+	if entries.NewIndex < uint32(len(f.core.Entries)) {
 		ack.Appended = false
 	} else {
 		var prevTerm = f.core.Entries[entries.NewIndex-1].Term
