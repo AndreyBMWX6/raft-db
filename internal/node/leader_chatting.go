@@ -21,8 +21,15 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 			} else {
 				switch entries := msg.(type) {
 				case *message.AppendEntries:
-					entrTopTerm := entries.Entries[entries.NewIndex - 1].Term
-					coreTopTerm := l.core.Entries[len(l.core.Entries)].Term
+					var entrTopTerm uint32 = 0
+					var coreTopTerm uint32 = 0
+					if len(entries.Entries) != 0 {
+						entrTopTerm = entries.Entries[entries.NewIndex - 1].Term
+					}
+					if len(entries.Entries) != 0 {
+						coreTopTerm = l.core.Entries[len(l.core.Entries) - 1].Term
+					}
+
 					if entrTopTerm > coreTopTerm {
 						return BecomeFollower(l, msg.OwnerAddr())
 					} else if entrTopTerm == coreTopTerm && len(entries.Entries) > len(l.core.Entries) {
