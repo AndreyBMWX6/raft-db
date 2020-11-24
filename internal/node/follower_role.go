@@ -49,7 +49,7 @@ func (f *Follower) PlayRole() RolePlayer {
 				f.ApplyClientMessage(msg)
 			}
 			if  msg := f.core.TryRecvRaftMsg(); msg != nil {
-				if nextRole := f.ApplyRaftMessage(msg); msg != nil {
+				if nextRole := f.ApplyRaftMessage(msg); nextRole != nil {
 					return nextRole
 				}
 			}

@@ -24,8 +24,8 @@ type Config struct {
 	RaftOut chan message.RaftMessage
 
 	// Client IO
-	ClientIn  <-chan message.ClientMessage
-	ClientOut chan<- message.ClientMessage
+	ClientIn  chan message.ClientMessage
+	ClientOut chan message.ClientMessage
 }
 
 func NewConfig() *Config {
@@ -36,7 +36,7 @@ func NewConfig() *Config {
 
 	neighbourStrings := []string{
 		"127.0.0.1:8001",
-		//"127.0.0.1:8002",
+		"127.0.0.1:8002",
 		//"127.0.0.1:8003",
 		//"127.0.0.1:8004",
 		//"127.0.0.1:8005",
@@ -63,7 +63,7 @@ func NewConfig() *Config {
 		HeartbeatTimeout: 1000*time.Millisecond,
 		Addr: *addr,
 		Neighbors: neighbors,
-		Term:      1,
+		Term:      2,
 		Entries:   nil,
 		RaftIn:    raftIn,
 		RaftOut:   raftOut,
