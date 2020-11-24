@@ -15,11 +15,11 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 		switch msg.Type() {
 		case message.AppendEntriesType:
 			// may be will add processing of query
-			log.Println("[candidate:", c.core.Term, " -> follower:,", msg.Term(), " ]")
+			log.Println("[candidate:", c.core.Term, " -> follower:", msg.Term(), " ]")
 			c.core.Term = msg.Term()
 			return BecomeFollower(c, msg.OwnerAddr())
 		case message.RequestVoteType:
-			if msg.Term() > c.core.Term {
+			if msg.Term() >= c.core.Term {
 				switch requestVote := msg.(type) {
 				case *message.RequestVote:
 					request := message.NewRequestVote(
@@ -31,7 +31,7 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 						requestVote.TopIndex,
 						requestVote.TopTerm,
 					)
-					log.Println("[candidate:", c.core.Term, " -> follower:", msg.Term(), " ]")
+					//log.Println("[candidate:", c.core.Term, " -> follower:", msg.Term(), " ]")
 					c.core.Term = msg.Term()
 					c.core.ProcessRequestVote(request)
 					c.timer = time.NewTimer(c.core.Config.HeartbeatTimeout)
