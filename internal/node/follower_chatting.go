@@ -12,9 +12,11 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 	}
 
 	if msg.Term() >= f.core.Term {
+		oldFollowerTerm := f.core.Term
 		f.core.Term = msg.Term()
 		switch msg.Type() {
 		case message.AppendEntriesType:
+			log.Println("[follower:", oldFollowerTerm, "  -> follower:", msg.Term(), " ]")
 			return RefreshFollower(f)
 		case message.RequestVoteType:
 			switch requestVote := msg.(type) {
@@ -29,7 +31,7 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 					requestVote.TopTerm,
 				)
 				f.core.ProcessRequestVote(request)
-				log.Println("[follower  -> follower ]")
+				log.Println("[follower:", oldFollowerTerm, "  -> follower:", msg.Term(), " ]")
 				return BecomeFollower(f, msg.OwnerAddr())
 			default:
 				log.Print("`RequestVoteMessage` expected, got another type")

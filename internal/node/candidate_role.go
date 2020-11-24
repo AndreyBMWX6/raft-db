@@ -17,6 +17,7 @@ type Candidate struct {
 
 func BecomeCandidate(player RolePlayer) *Candidate {
 	core := player.ReleaseNode()
+	core.Term++
 	return NewCandidate(core)
 }
 
@@ -76,7 +77,7 @@ func (c *Candidate) PlayRole() RolePlayer {
 		select {
 		case <-c.timer.C:
 			log.Println("voting time is out")
-			log.Println("[candidate -> candidate]")
+			log.Println("[candidate:", c.core.Term, " -> candidate:", c.core.Term + 1, "]")
 			return BecomeCandidate(c)
 
 		default:

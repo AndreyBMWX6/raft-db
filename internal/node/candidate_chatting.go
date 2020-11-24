@@ -3,6 +3,7 @@ package node
 import (
 	"../message"
 	"log"
+	"time"
 )
 
 func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
@@ -14,11 +15,11 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 		switch msg.Type() {
 		case message.AppendEntriesType:
 			// may be will add processing of query
-			log.Println("[candidate -> follower ]")
+			log.Println("[candidate:", c.core.Term, " -> follower:,", msg.Term(), " ]")
+			c.core.Term = msg.Term()
 			return BecomeFollower(c, msg.OwnerAddr())
 		case message.RequestVoteType:
 			if msg.Term() > c.core.Term {
-				c.core.Term = msg.Term()
 				switch requestVote := msg.(type) {
 				case *message.RequestVote:
 					request := message.NewRequestVote(
@@ -30,9 +31,10 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 						requestVote.TopIndex,
 						requestVote.TopTerm,
 					)
+					log.Println("[candidate:", c.core.Term, " -> follower:", msg.Term(), " ]")
+					c.core.Term = msg.Term()
 					c.core.ProcessRequestVote(request)
-					log.Println("[candidate -> follower ]")
-					return BecomeFollower(c, msg.OwnerAddr())
+					c.timer = time.NewTimer(c.core.Config.HeartbeatTimeout)
 				default:
 					log.Print("`RequestVoteMessage` expected, got another type")
 				}
@@ -45,8 +47,7 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 			}
 
 			if len(c.voters) >= c.maxVotes {
-				// logging
-				log.Println("[candidate -> leader   ]")
+				log.Println("[candidate:", c.core.Term, " -> leader:", c.core.Term, "   ]")
 				return BecomeLeader(c)
 			}
 

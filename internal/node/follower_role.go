@@ -42,7 +42,7 @@ func (f *Follower) PlayRole() RolePlayer {
 		select {
 		case <-f.timer.C:
 			log.Println("follower time is out")
-			log.Println("[follower  -> candidate]")
+			log.Println("[follower:", f.core.Term, "  -> candidate:", f.core.Term + 1, "]")
 			return BecomeCandidate(f)
 		default:
 			if msg := f.core.TryRecvClientMsg(); msg != nil {
