@@ -5,6 +5,8 @@ import (
 	"../message"
 	"log"
 	"net"
+
+	"strconv"
 )
 
 // Error Types
@@ -89,7 +91,12 @@ func (n *RaftCore) TryRecvRaftMsg() message.RaftMessage {
 			case message.AppendAckType:
 				msgType = "AppendAck"
 			case message.RequestAckType:
-				msgType = "RequestAck"
+				var Voted bool
+				switch requestAck := msg.(type) {
+				case *message.RequestAck:
+					Voted = requestAck.Voted
+				}
+				msgType = strconv.FormatBool(Voted) + " RequestAck"
 			}
 			log.Println("Node:", msg.DestAddr().String(), " got ", msgType,
 				" from Node:", msg.OwnerAddr().String())
