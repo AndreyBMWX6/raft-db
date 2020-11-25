@@ -59,12 +59,12 @@ func NewConfig() *Config {
 	var clientOut = make(chan message.ClientMessage)
 
 	return &Config{
-		FollowerTimeout:  1000*time.Millisecond,
-		VotingTimeout:    time.Duration(rand.Intn(1000) + 100)*time.Millisecond,
+		FollowerTimeout:  4000*time.Millisecond,
+		VotingTimeout:    time.Duration(rand.Intn(1000) + 1000)*time.Millisecond,
 		HeartbeatTimeout: 1000*time.Millisecond,
 		Addr: *addr,
 		Neighbors: neighbors,
-		Term:      2,
+		Term:      0,
 		Entries:   nil,
 		Voted: false,
 		RaftIn:    raftIn,

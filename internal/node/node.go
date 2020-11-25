@@ -81,24 +81,24 @@ func (n *RaftCore) TryRecvRaftMsg() message.RaftMessage {
 				switch appendEntries := msg.(type) {
 				case *message.AppendEntries:
 					if len(appendEntries.Entries) == 0 {
-						msgType = "Heartbeat"
+						msgType = "Heartbeat:"
 					} else {
-						msgType = "AppendEntries"
+						msgType = "AppendEntries:"
 					}
 				}
 			case message.RequestVoteType:
-				msgType = "RequestVote"
+				msgType = "RequestVote:"
 			case message.AppendAckType:
-				msgType = "AppendAck"
+				msgType = "AppendAck:"
 			case message.RequestAckType:
 				var Voted bool
 				switch requestAck := msg.(type) {
 				case *message.RequestAck:
 					Voted = requestAck.Voted
 				}
-				msgType = strconv.FormatBool(Voted) + " RequestAck"
+				msgType = strconv.FormatBool(Voted) + " RequestAck:"
 			}
-			log.Println("Node:", msg.DestAddr().String(), " got ", msgType,
+			log.Println("Node:", msg.DestAddr().String(), " got ", msgType, msg.Term(),
 				" from Node:", msg.OwnerAddr().String())
 			return msg
 		default:
@@ -160,7 +160,8 @@ func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) {
 		}
 	}
 
-	log.Println("Node:", ack.Owner.String(), " send", ack.Voted, " RequestAck to Node:", ack.Dest.String())
+	log.Println("Node:", ack.Owner.String(), " send", ack.Voted, " RequestAck:", ack.CurrTerm,
+		" to Node:", ack.Dest.String())
 	core.SendRaftMsg(
 		message.RaftMessage(ack),
 	)

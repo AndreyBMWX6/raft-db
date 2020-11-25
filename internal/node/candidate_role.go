@@ -70,7 +70,8 @@ func (c *Candidate) PlayRole() RolePlayer {
 			msg.TopTerm = 0
 		}
 
-		log.Println("Node:", msg.Owner.String(), " send RequestVote to Node:", msg.Dest.String())
+		log.Println("Node:", msg.Owner.String(), " send RequestVote:", msg.CurrTerm,
+			" to Node:", msg.Dest.String())
 		go c.core.SendRaftMsg(msg)
 	}
 

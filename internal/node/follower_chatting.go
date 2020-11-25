@@ -95,7 +95,8 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		}
 	}
 
-	log.Println("Node:", ack.Owner.String(), " send EntriesAck to Node:", ack.Dest.String())
+	log.Println("Node:", ack.Owner.String(), " send EntriesAck:", ack.CurrTerm,
+		" to Node:", ack.Dest.String())
 	f.core.SendRaftMsg(
 		message.RaftMessage(ack),
 	)

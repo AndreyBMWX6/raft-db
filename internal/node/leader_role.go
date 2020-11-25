@@ -57,12 +57,13 @@ func (l *Leader) PlayRole() RolePlayer {
 				)
 				var msgType string
 				if len(msg.Entries) == 0 {
-					msgType = "Heartbeat"
+					msgType = "Heartbeat:"
 				} else {
-					msgType = "AppendEntries"
+					msgType = "AppendEntries:"
 				}
 
-					log.Println("Node:", msg.Owner.String(), " send ", msgType, " to Node:", msg.Dest.String())
+					log.Println("Node:", msg.Owner.String(), " send ", msgType, msg.CurrTerm,
+						" to Node:", msg.Dest.String())
 				go l.core.SendRaftMsg(message.RaftMessage(msg))
 			}
 
