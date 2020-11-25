@@ -29,9 +29,21 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 					requestVote.TopIndex,
 					requestVote.TopTerm,
 				)
+
+				if msg.Term() > f.core.Term {
+					f.core.Term = msg.Term()
+					f.core.Voted = false
+				} else {
+					f.core.Voted = true
+				}
 				f.core.ProcessRequestVote(request)
-				log.Println("[follower:", oldFollowerTerm, "  -> follower:", msg.Term(), " ]")
-				return BecomeFollower(f, msg.OwnerAddr())
+				
+				if msg.Term() > oldFollowerTerm {
+					log.Println("[follower:", oldFollowerTerm, "  -> follower:", msg.Term(), " ]")
+					return BecomeFollower(f)
+				} else {
+					return nil
+				}
 			default:
 				log.Print("`RequestVoteMessage` expected, got another type")
 			}
@@ -42,11 +54,6 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 
 	switch msg.Type() {
 	case message.AppendEntriesType:
-
-		if msg.OwnerAddr().String() != f.leaderAddr.String() {
-			return nil
-		}
-
 		switch entries := msg.(type) {
 		case *message.AppendEntries:
 			f.ApplyAppendEntries(entries)
@@ -63,7 +70,7 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 	ack := message.NewEntriesAck(
 		&message.BaseRaftMessage{
 			Owner:    f.core.Addr,
-			Dest:     f.leaderAddr,
+			Dest:     entries.Owner,
 			CurrTerm: f.core.Term,
 		},
 		false,
@@ -72,7 +79,10 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 	if entries.NewIndex < uint32(len(f.core.Entries)) {
 		ack.Appended = false
 	} else {
-		var prevTerm = f.core.Entries[entries.NewIndex-1].Term
+		var prevTerm uint32 = 0
+		if len(f.core.Entries) != 0 {
+			prevTerm = f.core.Entries[entries.NewIndex-1].Term
+		}
 		if entries.PrevTerm != prevTerm {
 			ack.Appended = false
 		} else {

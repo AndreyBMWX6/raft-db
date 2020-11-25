@@ -5,7 +5,6 @@ import (
 	"../message"
 	"log"
 	"net"
-	"time"
 )
 
 // Error Types
@@ -40,6 +39,8 @@ type RaftCore struct {
 	Term uint32
 	Entries []*message.Entry
 
+	Voted bool
+
 	// Raft IO
 	RaftIn  <-chan message.RaftMessage
 	RaftOut chan<- message.RaftMessage
@@ -58,6 +59,7 @@ func NewRaftCore() *RaftCore {
 		Neighbors: cfg.Neighbors,
 		Term:      cfg.Term,
 		Entries:   cfg.Entries,
+		Voted:     cfg.Voted,
 		RaftIn:    cfg.RaftIn,
 		RaftOut:   cfg.RaftOut,
 		ClientIn:  cfg.ClientIn,
@@ -128,31 +130,31 @@ func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) {
 		}, false,
 	)
 
-	// if no Entries, Topterm = 0
-	var topTerm uint32 = 0
-	if core.Entries != nil {
-		topTerm = core.Entries[len(core.Entries) - 1].Term
-	}
-	if request.TopTerm < topTerm {
+	// node votes once in 1 term, so if node have already voted, it won't vote again
+	if core.Voted {
 		// made for clarity
 		ack.Voted = false
 	} else {
-		var topIndex = uint32(len(core.Entries))
-		if (request.TopTerm == topTerm) && (request.TopIndex < topIndex) {
-			// made for clarity
+		// if no Entries, topTerm = 0
+		var topTerm uint32 = 0
+		if core.Entries != nil {
+			topTerm = core.Entries[len(core.Entries) - 1].Term
+		}
+		if request.TopTerm < topTerm {
 			ack.Voted = false
 		} else {
-			ack.Voted = true
+			var topIndex = uint32(len(core.Entries))
+			if (request.TopTerm == topTerm) && (request.TopIndex < topIndex) {
+				ack.Voted = false
+			} else {
+				ack.Voted = true
+				core.Voted = true
+			}
 		}
 	}
 
-	log.Println("Node:", ack.Owner.String(), " send RequestAck to Node:", ack.Dest.String())
+	log.Println("Node:", ack.Owner.String(), " send", ack.Voted, " RequestAck to Node:", ack.Dest.String())
 	core.SendRaftMsg(
 		message.RaftMessage(ack),
 	)
-
-	if (ack.Voted) {
-		time.Sleep(core.Config.VotingTimeout)
-
-	}
 }

@@ -18,6 +18,7 @@ type Config struct {
 
 	Term uint32
 	Entries []*message.Entry
+	Voted bool
 
 	// Raft IO
 	RaftIn  chan message.RaftMessage
@@ -65,6 +66,7 @@ func NewConfig() *Config {
 		Neighbors: neighbors,
 		Term:      2,
 		Entries:   nil,
+		Voted: false,
 		RaftIn:    raftIn,
 		RaftOut:   raftOut,
 		ClientIn:  clientIn,

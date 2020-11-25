@@ -3,7 +3,6 @@ package node
 import (
 	"../message"
 	"log"
-	"time"
 )
 
 func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
@@ -12,14 +11,14 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 	}
 
 	if msg.Term() >= c.core.Term {
+		oldCandidateTerm := c.core.Term
 		switch msg.Type() {
 		case message.AppendEntriesType:
 			// may be will add processing of query
-			log.Println("[candidate:", c.core.Term, " -> follower:", msg.Term(), " ]")
+			log.Println("[candidate:", oldCandidateTerm, " -> follower:", msg.Term(), " ]")
 			c.core.Term = msg.Term()
-			return BecomeFollower(c, msg.OwnerAddr())
+			return BecomeFollower(c)
 		case message.RequestVoteType:
-			if msg.Term() > c.core.Term {
 				switch requestVote := msg.(type) {
 				case *message.RequestVote:
 					request := message.NewRequestVote(
@@ -31,14 +30,27 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 						requestVote.TopIndex,
 						requestVote.TopTerm,
 					)
-					c.core.Term = msg.Term()
+
+					if msg.Term() > c.core.Term {
+						c.core.Term = msg.Term()
+						c.core.Voted = false
+					}
 					c.core.ProcessRequestVote(request)
-					c.timer = time.NewTimer(c.core.Config.HeartbeatTimeout)
+
+					if msg.Term() > oldCandidateTerm {
+						log.Println("[candidate:", oldCandidateTerm, " -> follower:", msg.Term(), " ]")
+						return BecomeFollower(c)
+					} else {
+						return nil
+					}
 				default:
 					log.Print("`RequestVoteMessage` expected, got another type")
 				}
-			}
 		case message.RequestAckType:
+			if msg.Term() > oldCandidateTerm {
+				log.Println("[candidate:", oldCandidateTerm, " -> follower:", msg.Term(), " ]")
+				return BecomeFollower(c)
+			}
 			switch requestAck := msg.(type) {
 			case *message.RequestAck:
 				if requestAck.Voted {

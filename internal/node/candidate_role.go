@@ -43,6 +43,7 @@ func (c *Candidate) ReleaseNode() *RaftCore {
 func (c *Candidate) PlayRole() RolePlayer {
 	// Votes for itself
 	c.voters[c.core.Addr.String()] = struct{}{}
+	c.core.Voted = true
 
 	// implementation of parallel RequestVote
 	for _, neighbour := range c.core.Neighbors {

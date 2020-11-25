@@ -2,7 +2,6 @@ package node
 
 import (
 	"log"
-	"net"
 	"time"
 )
 
@@ -11,15 +10,13 @@ type Follower struct {
 	core *RaftCore
 
 	timer *time.Timer
-	leaderAddr net.UDPAddr
 }
 
-func BecomeFollower(player RolePlayer, leader *net.UDPAddr) *Follower {
+func BecomeFollower(player RolePlayer) *Follower {
 	core := player.ReleaseNode()
 	return &Follower{
 		core:       core,
 		timer:      time.NewTimer(core.Config.FollowerTimeout),
-		leaderAddr: *leader,
 	}
 }
 
