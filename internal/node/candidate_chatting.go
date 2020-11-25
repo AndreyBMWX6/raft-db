@@ -19,7 +19,7 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 			c.core.Term = msg.Term()
 			return BecomeFollower(c, msg.OwnerAddr())
 		case message.RequestVoteType:
-			if msg.Term() >= c.core.Term {
+			if msg.Term() > c.core.Term {
 				switch requestVote := msg.(type) {
 				case *message.RequestVote:
 					request := message.NewRequestVote(
@@ -39,10 +39,19 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 				}
 			}
 		case message.RequestAckType:
-			if _, found := c.voters[msg.OwnerAddr().String()]; found {
-				return nil
-			} else {
-				c.voters[msg.OwnerAddr().String()] = struct{}{}
+			switch requestAck := msg.(type) {
+			case *message.RequestAck:
+				if requestAck.Voted {
+					if _, found := c.voters[msg.OwnerAddr().String()]; found {
+						return nil
+					} else {
+						c.voters[msg.OwnerAddr().String()] = struct{}{}
+					}
+				} else {
+					return nil
+				}
+			default:
+				log.Print("`RequestAckMessage` expected, got another type")
 			}
 
 			if len(c.voters) >= c.maxVotes {
