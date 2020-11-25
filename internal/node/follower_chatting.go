@@ -30,8 +30,7 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 					requestVote.TopTerm,
 				)
 
-				if msg.Term() > f.core.Term {
-					f.core.Term = msg.Term()
+				if msg.Term() > oldFollowerTerm {
 					f.core.Voted = false
 				} else {
 					f.core.Voted = true

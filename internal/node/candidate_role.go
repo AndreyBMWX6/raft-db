@@ -22,7 +22,7 @@ func BecomeCandidate(player RolePlayer) *Candidate {
 }
 
 func NewCandidate(core *RaftCore) *Candidate {
-	maxVotes := (len(core.Neighbors)+1)/2
+	maxVotes := (len(core.Neighbors)/2)+1
 	return &Candidate{
 		core:     core,
 		timer:    time.NewTimer(time.Duration(rand.Intn(1000) + 100)*time.Millisecond),
