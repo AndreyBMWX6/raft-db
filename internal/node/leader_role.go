@@ -57,9 +57,11 @@ func (l *Leader) PlayRole() RolePlayer {
 			}
 		default:
 			if msg := l.core.TryRecvClientMsg(); msg != nil {
+				log.Println("leader recieved message  -  leader_role.go")
 				switch rawClient := msg.(type) {
 				case *message.RawClientMessage:
 					for _, update := range updates {
+						log.Println("leader sent updates to followers")
 						update <-rawClient.Entry
 					}
 
@@ -99,15 +101,16 @@ func NewReplicator(ctx context.Context,
 			case <-ctx.Done():
 				return
 			case u := <-update:
-				if update == nil {
+				if u == nil {
 					heartbeat = true
 				} else {
 					heartbeat = false
 					entries = append(entries, u)
 				}
-			default:
+
 				var newEntries []*message.Entry
-				if !heartbeat {
+				//log.Println("heartbeat:", heartbeat)
+				if heartbeat == false {
 					newEntries = entries
 				} else {
 					newEntries = nil
@@ -132,8 +135,9 @@ func NewReplicator(ctx context.Context,
 
 				log.Println("Node:", msg.Owner.String(), " send ", msgType, msg.CurrTerm,
 					" to Node:", msg.Dest.String())
-				log.Println(len(msg.Entries))
+				//log.Println(len(msg.Entries), ":", msg.Entries, "delete later in leader_role.go")
 				l.core.SendRaftMsg(message.RaftMessage(msg))
+			default:
 			}
 		}
 	}

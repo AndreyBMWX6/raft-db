@@ -47,12 +47,15 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 				}
 			}
 		case message.AppendAckType:
+			log.Println("leader got ack response from follower")
 			response := message.NewResponseClientMessage(
 				&message.BaseClientMessage{
 					Owner:   nil,
 					Dest:    nil,
 				},
 			)
+
+			log.Println("leader sent response to client_manager")
 			l.core.SendClientMsg(response)
 			return nil
 		default:

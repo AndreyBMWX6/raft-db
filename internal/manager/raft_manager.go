@@ -59,11 +59,15 @@ func (rm *RaftManager) ProcessMessage() {
 				data.PrevTerm = raftMsg.PrevTerm
 				data.NewIndex = raftMsg.NewIndex
 				entries := make([]*net_messages.Entry, 0)
-				for _, entry := range raftMsg.Entries {
-					Entry := &net_messages.Entry{}
-					Entry.Term = entry.Term
-					Entry.Query = entry.Query
-					entries = append(entries, Entry)
+				if raftMsg.Entries == nil {
+					entries = nil
+				} else {
+					for _, entry := range raftMsg.Entries {
+						Entry := &net_messages.Entry{}
+						Entry.Term = entry.Term
+						Entry.Query = entry.Query
+						entries = append(entries, Entry)
+					}
 				}
 				data.Entries = entries
 
