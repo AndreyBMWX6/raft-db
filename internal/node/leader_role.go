@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"log"
+	"net"
 	"time"
 
 	"../message"
@@ -17,6 +18,9 @@ type Leader struct {
 	core *RaftCore
 	ctx  context.Context
 	heartbeat *time.Ticker
+
+	// needed to define, when more than half committed and send response yo client
+	//replicated int
 }
 
 func BecomeLeader(player RolePlayer) *Leader {
@@ -35,41 +39,33 @@ func (l *Leader) ReleaseNode() *RaftCore {
 }
 
 func (l *Leader) PlayRole() RolePlayer {
+	ctx, cancel := context.WithCancel(l.ctx)
+	defer cancel()
+	updates := make([]chan *message.Entry, 0)
+
+	for _, neighbour := range l.core.Neighbors {
+		update := make(chan *message.Entry)
+		go NewReplicator(ctx, l, neighbour, update)()
+		updates = append(updates, update)
+	}
+
 	for {
 		select {
 		case <-l.heartbeat.C:
-			// sending heartbeat
-			// no entries in leader case no need to assign newIdx as it's assigned by len(Entries)
-			var prevTerm uint32 = 0
-			if len(l.core.Entries) > 1 {
-				prevTerm = l.core.Entries[len(l.core.Entries) - 2].Term
+			for _, update := range updates {
+				update <- nil
 			}
-			for _, neighbour := range l.core.Neighbors {
-				msg := message.NewAppendEntries(
-					&message.BaseRaftMessage{
-					Owner:    l.core.Addr,
-					Dest:     neighbour,
-					CurrTerm: l.core.Term,
-					},
-					prevTerm,
-					uint32(len(l.core.Entries)),
-					make([]*message.Entry, 0),
-				)
-				var msgType string
-				if len(msg.Entries) == 0 {
-					msgType = "Heartbeat:"
-				} else {
-					msgType = "AppendEntries:"
-				}
-
-					log.Println("Node:", msg.Owner.String(), " send ", msgType, msg.CurrTerm,
-						" to Node:", msg.Dest.String())
-				go l.core.SendRaftMsg(message.RaftMessage(msg))
-			}
-
 		default:
 			if msg := l.core.TryRecvClientMsg(); msg != nil {
-				// as heartbeat, but with data
+				switch rawClient := msg.(type) {
+				case *message.RawClientMessage:
+					for _, update := range updates {
+						update <-rawClient.Entry
+					}
+
+				default:
+					log.Print("`RawClientMessage` expected, got another type")
+				}
 			}
 			if msg := l.core.TryRecvRaftMsg(); msg != nil {
 				if nextRole := l.ApplyRaftMessage(msg); nextRole != nil {
@@ -79,3 +75,67 @@ func (l *Leader) PlayRole() RolePlayer {
 		}
 	}
 }
+
+func NewReplicator(ctx context.Context,
+				   l *Leader,
+				   follower net.UDPAddr,
+				   update <-chan *message.Entry) func() {
+	return func() {
+		// helps switching between sending heartbeat and new entries
+		var heartbeat = false
+
+		var entries []*message.Entry
+		var newIndex uint32 = 0
+		if len(l.core.Entries) != 0 {
+			newIndex = uint32(len(l.core.Entries) - 1)
+		}
+		var prevTerm uint32 = 0
+		if newIndex > 0 {
+			prevTerm = l.core.Entries[newIndex - 1].Term
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case u := <-update:
+				if update == nil {
+					heartbeat = true
+				} else {
+					heartbeat = false
+					entries = append(entries, u)
+				}
+			default:
+				var newEntries []*message.Entry
+				if !heartbeat {
+					newEntries = entries
+				} else {
+					newEntries = nil
+				}
+
+				msg := message.NewAppendEntries(
+					&message.BaseRaftMessage{
+						Owner:    l.core.Addr,
+						Dest:     follower,
+						CurrTerm: l.core.Term,
+					},
+					prevTerm,
+					newIndex,
+					newEntries,
+				)
+				var msgType string
+				if len(msg.Entries) == 0 {
+					msgType = "Heartbeat:"
+				} else {
+					msgType = "AppendEntries:"
+				}
+
+				log.Println("Node:", msg.Owner.String(), " send ", msgType, msg.CurrTerm,
+					" to Node:", msg.Dest.String())
+				log.Println(len(msg.Entries))
+				l.core.SendRaftMsg(message.RaftMessage(msg))
+			}
+		}
+	}
+}
+

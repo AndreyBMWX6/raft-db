@@ -52,3 +52,57 @@ type BaseRaftMessage struct {
 	Dest  net.UDPAddr
 	CurrTerm uint32
 }
+
+type BaseClientMessage struct {
+	Owner net.Addr
+	Dest  net.Addr
+}
+
+type RawClientMessage struct {
+	BaseClientMessage
+
+	Entry *Entry
+}
+
+func NewRawClientMessage(base *BaseClientMessage,
+					  entry *Entry) *RawClientMessage {
+	return &RawClientMessage{
+		BaseClientMessage: *base,
+		Entry:           entry,
+	}
+}
+
+
+func (rc *RawClientMessage) ClientAddr() net.Addr {
+	return rc.Owner
+}
+
+func (rc *RawClientMessage) DestAddr() net.Addr {
+	return rc.Dest
+}
+
+func (rc *RawClientMessage) Type() int {
+	return RawClientMessageType
+}
+
+type ResponseClientMessage struct {
+	BaseClientMessage
+}
+
+func NewResponseClientMessage(base *BaseClientMessage) *RawClientMessage {
+	return &RawClientMessage{
+		BaseClientMessage: *base,
+	}
+}
+
+func (rc *ResponseClientMessage) ClientAddr() net.Addr {
+	return rc.Owner
+}
+
+func (rc *ResponseClientMessage) DestAddr() net.Addr {
+	return rc.Dest
+}
+
+func (rc *ResponseClientMessage) Type() int {
+	return ResponseClientAnswer
+}

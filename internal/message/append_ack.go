@@ -11,6 +11,7 @@ type AppendAck struct {
 	BaseRaftMessage
 
 	Appended bool
+	// add field definng heartbeat ack or append
 }
 
 func NewEntriesAck(base *BaseRaftMessage, appended bool) *AppendAck {

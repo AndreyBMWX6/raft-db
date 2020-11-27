@@ -47,7 +47,13 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 				}
 			}
 		case message.AppendAckType:
-			// make logic to send AppendEntries when needed and when not - only heartbeat
+			response := message.NewResponseClientMessage(
+				&message.BaseClientMessage{
+					Owner:   nil,
+					Dest:    nil,
+				},
+			)
+			l.core.SendClientMsg(response)
 			return nil
 		default:
 			return nil

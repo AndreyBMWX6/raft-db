@@ -29,7 +29,7 @@ func (rm *RaftManager) ProcessMessage() {
 	conn, err := net.ListenUDP("udp", &myAddr)
 	defer conn.Close()
 	if err != nil {
-		log.Println("Error: ", err)
+		log.Fatal(err)
 	}
 
 	go rm.ListenToUDP(conn)
@@ -82,7 +82,7 @@ func (rm *RaftManager) ProcessMessage() {
 
 				// sending UDP
 				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
-					panic(err)
+					log.Fatal(err)
 					return
 				}
 			case *message.RequestVote:
@@ -107,7 +107,7 @@ func (rm *RaftManager) ProcessMessage() {
 
 				// sending UDP
 				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
-					panic(err)
+					log.Fatal(err)
 					return
 				}
 			case *message.AppendAck:
@@ -131,7 +131,7 @@ func (rm *RaftManager) ProcessMessage() {
 
 				// sending UDP
 				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
-					panic(err)
+					log.Fatal(err)
 					return
 				}
 			case *message.RequestAck:
@@ -155,7 +155,7 @@ func (rm *RaftManager) ProcessMessage() {
 
 				// sending UDP
 				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
-					panic(err)
+					log.Fatal(err)
 					return
 				}
 			default:
@@ -189,7 +189,7 @@ func (rm *RaftManager) ListenToUDP(conn *net.UDPConn) {
 			}
 
 			if err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
 		}
 	}

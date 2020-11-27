@@ -75,22 +75,23 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		false,
 	)
 
-	if entries.NewIndex < uint32(len(f.core.Entries)) {
-		ack.Appended = false
+	if entries.Entries == nil {
+		ack.Appended = true
 	} else {
-		var prevTerm uint32 = 0
-		if len(f.core.Entries) != 0 {
-			prevTerm = f.core.Entries[entries.NewIndex-1].Term
-		}
-		if entries.PrevTerm != prevTerm {
+		if entries.NewIndex < uint32(len(f.core.Entries)) {
 			ack.Appended = false
 		} else {
-			// if nil, got heartbeat, so don't need to append
-			if entries.Entries != nil {
-				f.core.Entries = append(f.core.Entries[:entries.NewIndex],
-					entries.Entries...)
+			var prevTerm uint32 = 0
+			if len(f.core.Entries) != 0 && entries.NewIndex > 0 {
+				prevTerm = f.core.Entries[entries.NewIndex-1].Term
 			}
-			ack.Appended = true
+			if entries.PrevTerm != prevTerm {
+				ack.Appended = false
+			} else {
+					f.core.Entries = append(f.core.Entries[:entries.NewIndex],
+						entries.Entries...)
+				ack.Appended = true
+			}
 		}
 	}
 
