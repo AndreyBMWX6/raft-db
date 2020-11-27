@@ -39,31 +39,31 @@ func (rm *RaftManager) ProcessMessage() {
 		case msg := <-rm.RaftIn:
 			// change Term type from int to avoid int32 conversion()
 			// initializing baseraftmessage
-			baseRaftMsg := &net_messages.BaseRaftMessage{}
+			baseRaftMsg := &net_message.BaseRaftMessage{}
 			ownerIp := msg.OwnerAddr().IP
 			var ownerPort = uint32(msg.OwnerAddr().Port)
 			destIp := msg.DestAddr().IP
 			var destPort = uint32(msg.DestAddr().Port)
 
-			baseRaftMsg.Ownerip = ownerIp[len(ownerIp)-4:]
-			baseRaftMsg.Ownerport = ownerPort
-			baseRaftMsg.Dest = destIp[len(destIp)-4:]
-			baseRaftMsg.Destport = destPort
+			baseRaftMsg.OwnerIp = ownerIp[len(ownerIp)-4:]
+			baseRaftMsg.OwnerPort = ownerPort
+			baseRaftMsg.DestIp = destIp[len(destIp)-4:]
+			baseRaftMsg.DestPort = destPort
 			baseRaftMsg.CurrTerm = msg.Term()
 
 			switch raftMsg := msg.(type) {
 			case *message.AppendEntries:
-				data := &net_messages.AppendEntries{}
+				data := &net_message.AppendEntries{}
 				// initializing data
 				data.Msg = baseRaftMsg
 				data.PrevTerm = raftMsg.PrevTerm
 				data.NewIndex = raftMsg.NewIndex
-				entries := make([]*net_messages.Entry, 0)
+				entries := make([]*net_message.Entry, 0)
 				if raftMsg.Entries == nil {
 					entries = nil
 				} else {
 					for _, entry := range raftMsg.Entries {
-						Entry := &net_messages.Entry{}
+						Entry := &net_message.Entry{}
 						Entry.Term = entry.Term
 						Entry.Query = entry.Query
 						entries = append(entries, Entry)
@@ -77,20 +77,14 @@ func (rm *RaftManager) ProcessMessage() {
 					log.Fatal("marshaling error: ", err)
 					return
 				}
-
-				// adding message type to message
-				var msgType uint8 = message.AppendEntriesType
-				udpMsg := make([]byte, 1)
-				udpMsg[0] = msgType
-				udpMsg = append(udpMsg, protoData...)
-
+				
 				// sending UDP
-				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
+				if _, err := conn.WriteToUDP(protoData, msg.DestAddr()); err != nil {
 					log.Fatal(err)
 					return
 				}
 			case *message.RequestVote:
-				data := &net_messages.RequestVote{}
+				data := &net_message.RequestVote{}
 				// initializing data
 				data.Msg = baseRaftMsg
 				data.TopIndex = raftMsg.TopIndex
@@ -103,22 +97,17 @@ func (rm *RaftManager) ProcessMessage() {
 					return
 				}
 
-				// adding message type to message
-				var msgType uint8 = message.RequestVoteType
-				udpMsg := make([]byte, 1)
-				udpMsg[0] = msgType
-				udpMsg = append(udpMsg, protoData...)
-
 				// sending UDP
-				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
+				if _, err := conn.WriteToUDP(protoData, msg.DestAddr()); err != nil {
 					log.Fatal(err)
 					return
 				}
 			case *message.AppendAck:
-				data := &net_messages.AppendAck{}
+				data := &net_message.AppendAck{}
 				// initializing data
 				data.Msg = baseRaftMsg
 				data.Appended = raftMsg.Appended
+				data.Heartbeat = raftMsg.Heartbeat
 
 				// encrypting data
 				protoData, err := proto.Marshal(data)
@@ -127,19 +116,13 @@ func (rm *RaftManager) ProcessMessage() {
 					return
 				}
 
-				// adding message type to message
-				var msgType uint8 = message.AppendAckType
-				udpMsg := make([]byte, 1)
-				udpMsg[0] = msgType
-				udpMsg = append(udpMsg, protoData...)
-
 				// sending UDP
-				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
+				if _, err := conn.WriteToUDP(protoData, msg.DestAddr()); err != nil {
 					log.Fatal(err)
 					return
 				}
 			case *message.RequestAck:
-				data := &net_messages.RequestAck{}
+				data := &net_message.RequestAck{}
 				// initializing data
 				data.Msg = baseRaftMsg
 				data.Voted = raftMsg.Voted
@@ -151,14 +134,8 @@ func (rm *RaftManager) ProcessMessage() {
 					return
 				}
 
-				// adding message type to message
-				var msgType uint8 = message.RequestAckType
-				udpMsg := make([]byte, 1)
-				udpMsg[0] = msgType
-				udpMsg = append(udpMsg, protoData...)
-
 				// sending UDP
-				if _, err := conn.WriteToUDP(udpMsg, msg.DestAddr()); err != nil {
+				if _, err := conn.WriteToUDP(protoData, msg.DestAddr()); err != nil {
 					log.Fatal(err)
 					return
 				}
@@ -173,23 +150,27 @@ func (rm *RaftManager) ProcessMessage() {
 func (rm *RaftManager) ListenToUDP(conn *net.UDPConn) {
 	recvBuff := make([]byte, 1024)
 	for {
-		if length, _, err := conn.ReadFromUDP(recvBuff); err == nil {
-			data := recvBuff[1:length]
-			switch recvBuff[0] {
-			case uint8(message.AppendEntriesType):
-				var appendEntries *message.AppendEntries
-				rm.RaftOut <- appendEntries.Unmarshal(data)
-			case uint8(message.AppendAckType):
-				var appendAck *message.AppendAck
-				rm.RaftOut <- appendAck.Unmarshal(data)
-			case uint8(message.RequestVoteType):
-				var requestVote *message.RequestVote
-				rm.RaftOut <- requestVote.Unmarshal(data)
-			case uint8(message.RequestAckType):
-				var requestAck *message.RequestAck
-				rm.RaftOut <- requestAck.Unmarshal(data)
-			default:
-
+		if _, _, err := conn.ReadFromUDP(recvBuff); err == nil {
+			msg := net_message.Message{}
+			pErr := proto.Unmarshal(recvBuff, &msg)
+			if pErr == nil {
+				switch msg.RaftMessage.(type) {
+				case *net_message.Message_AppendEntries:
+					var appendEntries *message.AppendEntries
+					rm.RaftOut <- appendEntries.Unmarshal(&msg)
+				case *net_message.Message_AppendAck:
+					var appendAck *message.AppendAck
+					rm.RaftOut <- appendAck.Unmarshal(&msg)
+				case *net_message.Message_RequestVote:
+					var requestVote *message.RequestVote
+					rm.RaftOut <- requestVote.Unmarshal(&msg)
+				case *net_message.Message_RequestAck:
+					var requestAck *message.RequestAck
+					rm.RaftOut <- requestAck.Unmarshal(&msg)
+				}
+			}
+			if pErr != nil {
+				log.Fatal("unmarshaling error: ", err)
 			}
 
 			if err != nil {

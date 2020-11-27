@@ -1,10 +1,8 @@
 package message
 
 import (
-	"log"
-	"net"
 	"../net_message"
-	"google.golang.org/protobuf/proto"
+	"net"
 )
 
 type RequestVote struct {
@@ -40,44 +38,41 @@ func (rv RequestVote) Type() int {
 	return RequestVoteType
 }
 
-func (rv *RequestVote) Unmarshal(data []byte) RaftMessage {
-	requestVote := net_messages.RequestVote{}
-	err := proto.Unmarshal(data, &requestVote)
-	if err == nil {
+func (rv *RequestVote) Unmarshal(message *net_message.Message) RaftMessage {
+	switch raftMsg := message.RaftMessage.(type) {
+	case *net_message.Message_RequestVote:
 		// converting values
 		ownerIp := net.IPv4(
-			requestVote.Msg.Ownerip[0],
-			requestVote.Msg.Ownerip[1],
-			requestVote.Msg.Ownerip[2],
-			requestVote.Msg.Ownerip[3])
+			raftMsg.RequestVote.Msg.OwnerIp[0],
+			raftMsg.RequestVote.Msg.OwnerIp[1],
+			raftMsg.RequestVote.Msg.OwnerIp[2],
+			raftMsg.RequestVote.Msg.OwnerIp[3])
 		ownerUdp := net.UDPAddr{
 			IP:   ownerIp,
-			Port: int(requestVote.Msg.Ownerport),
+			Port: int(raftMsg.RequestVote.Msg.OwnerPort),
 		}
 
 		destIp := net.IPv4(
-			requestVote.Msg.Dest[0],
-			requestVote.Msg.Dest[1],
-			requestVote.Msg.Dest[2],
-			requestVote.Msg.Dest[3])
+			raftMsg.RequestVote.Msg.DestIp[0],
+			raftMsg.RequestVote.Msg.DestIp[1],
+			raftMsg.RequestVote.Msg.DestIp[2],
+			raftMsg.RequestVote.Msg.DestIp[3])
 		destUdp := net.UDPAddr{
 			IP:   destIp,
-			Port: int(requestVote.Msg.Destport),
+			Port: int(raftMsg.RequestVote.Msg.DestPort),
 		}
 
 		return NewRequestVote(
 			&BaseRaftMessage{
 				Owner:    ownerUdp,
 				Dest:     destUdp,
-				CurrTerm: requestVote.Msg.CurrTerm,
+				CurrTerm: raftMsg.RequestVote.Msg.CurrTerm,
 			},
-			requestVote.TopIndex,
-			requestVote.TopTerm,
+			raftMsg.RequestVote.TopIndex,
+			raftMsg.RequestVote.TopTerm,
 		)
 
+	default:
+		return nil
 	}
-	if err != nil {
-		log.Fatal("unmarshaling error: ", err)
-	}
-	return nil
 }

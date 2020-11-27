@@ -1,10 +1,8 @@
 package message
 
 import (
-	"log"
-	"net"
 	"../net_message"
-	"google.golang.org/protobuf/proto"
+	"net"
 )
 
 type RequestAck struct {
@@ -36,42 +34,40 @@ func (ra RequestAck) Type() int {
 	return RequestAckType
 }
 
-func (ra *RequestAck) Unmarshal(data []byte) RaftMessage {
-	requestAck := net_messages.RequestAck{}
-	err := proto.Unmarshal(data, &requestAck)
-	if err == nil {
+func (ra *RequestAck) Unmarshal(message *net_message.Message) RaftMessage {
+	switch raftMsg := message.RaftMessage.(type) {
+	case *net_message.Message_RequestAck:
 		// converting values
 		ownerIp := net.IPv4(
-			requestAck.Msg.Ownerip[0],
-			requestAck.Msg.Ownerip[1],
-			requestAck.Msg.Ownerip[2],
-			requestAck.Msg.Ownerip[3])
+			raftMsg.RequestAck.Msg.OwnerIp[0],
+			raftMsg.RequestAck.Msg.OwnerIp[1],
+			raftMsg.RequestAck.Msg.OwnerIp[2],
+			raftMsg.RequestAck.Msg.OwnerIp[3])
 		ownerUdp := net.UDPAddr{
 			IP:   ownerIp,
-			Port: int(requestAck.Msg.Ownerport),
+			Port: int(raftMsg.RequestAck.Msg.OwnerPort),
 		}
 
 		destIp := net.IPv4(
-			requestAck.Msg.Ownerip[0],
-			requestAck.Msg.Ownerip[1],
-			requestAck.Msg.Ownerip[2],
-			requestAck.Msg.Ownerip[3])
+			raftMsg.RequestAck.Msg.DestIp[0],
+			raftMsg.RequestAck.Msg.DestIp[1],
+			raftMsg.RequestAck.Msg.DestIp[2],
+			raftMsg.RequestAck.Msg.DestIp[3])
 		destUdp := net.UDPAddr{
 			IP:   destIp,
-			Port: int(requestAck.Msg.Destport),
+			Port: int(raftMsg.RequestAck.Msg.DestPort),
 		}
 
 		return NewRequestAck(
 			&BaseRaftMessage{
 				Owner:    ownerUdp,
 				Dest:     destUdp,
-				CurrTerm: requestAck.Msg.CurrTerm,
+				CurrTerm: raftMsg.RequestAck.Msg.CurrTerm,
 			},
-			requestAck.Voted,
+			raftMsg.RequestAck.Voted,
 		)
+
+	default:
+		return nil
 	}
-	if err != nil {
-		log.Fatal("unmarshaling error: ", err)
-	}
-	return nil
 }

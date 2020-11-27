@@ -1,10 +1,8 @@
 package message
 
 import (
-	"log"
-	"net"
 	"../net_message"
-	"google.golang.org/protobuf/proto"
+	"net"
 )
 
 type AppendAck struct {
@@ -15,7 +13,7 @@ type AppendAck struct {
 	Heartbeat bool
 }
 
-func NewEntriesAck(base *BaseRaftMessage, appended bool, heartbeat bool) *AppendAck {
+func NewAppendAck(base *BaseRaftMessage, appended bool, heartbeat bool) *AppendAck {
 	return &AppendAck{
 		BaseRaftMessage: *base,
 		Appended:    	 appended,
@@ -39,43 +37,41 @@ func (aa AppendAck) Type() int {
 	return AppendAckType
 }
 
-func (aa *AppendAck) Unmarshal(data []byte) RaftMessage {
-	appendAck := net_messages.AppendAck{}
-	err := proto.Unmarshal(data, &appendAck)
-	if err == nil {
+func (aa *AppendAck) Unmarshal(message *net_message.Message) RaftMessage {
+	switch raftMsg := message.RaftMessage.(type) {
+	case *net_message.Message_AppendAck:
 		// converting values
 		ownerIp := net.IPv4(
-			appendAck.Msg.Ownerip[0],
-			appendAck.Msg.Ownerip[1],
-			appendAck.Msg.Ownerip[2],
-			appendAck.Msg.Ownerip[3])
+			raftMsg.AppendAck.Msg.OwnerIp[0],
+			raftMsg.AppendAck.Msg.OwnerIp[1],
+			raftMsg.AppendAck.Msg.OwnerIp[2],
+			raftMsg.AppendAck.Msg.OwnerIp[3])
 		ownerUdp := net.UDPAddr{
 			IP:   ownerIp,
-			Port: int(appendAck.Msg.Ownerport),
+			Port: int(raftMsg.AppendAck.Msg.OwnerPort),
 		}
 
 		destIp := net.IPv4(
-			appendAck.Msg.Dest[0],
-			appendAck.Msg.Dest[1],
-			appendAck.Msg.Dest[2],
-			appendAck.Msg.Dest[3])
+			raftMsg.AppendAck.Msg.DestIp[0],
+			raftMsg.AppendAck.Msg.DestIp[1],
+			raftMsg.AppendAck.Msg.DestIp[2],
+			raftMsg.AppendAck.Msg.DestIp[3])
 		destUdp := net.UDPAddr{
 			IP:   destIp,
-			Port: int(appendAck.Msg.Destport),
+			Port: int(raftMsg.AppendAck.Msg.DestPort),
 		}
 
-		return NewEntriesAck(
+		return NewAppendAck(
 			&BaseRaftMessage{
 				Owner:    ownerUdp,
 				Dest:     destUdp,
-				CurrTerm: appendAck.Msg.CurrTerm,
+				CurrTerm: raftMsg.AppendAck.Msg.CurrTerm,
 			},
-			appendAck.Appended,
-
+			raftMsg.AppendAck.Appended,
+			raftMsg.AppendAck.Heartbeat,
 		)
+
+	default:
+		return nil
 	}
-	if err != nil {
-		log.Fatal("unmarshaling error: ", err)
-	}
-	return nil
 }

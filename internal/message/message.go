@@ -1,6 +1,9 @@
 package message
 
-import "net"
+import (
+	"net"
+	"../net_message"
+)
 
 // Raft Message Types
 const (
@@ -32,7 +35,7 @@ type RaftMessage interface {
 
 	Term() uint32
 	Type() int
-	Unmarshal([]byte) RaftMessage
+	Unmarshal(message *net_message.Message) RaftMessage
 }
 
 // Inter-client Message Type

@@ -63,17 +63,19 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 }
 
 func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
-	ack := message.NewEntriesAck(
+	ack := message.NewAppendAck(
 		&message.BaseRaftMessage{
 			Owner:    f.core.Addr,
 			Dest:     entries.Owner,
 			CurrTerm: f.core.Term,
 		},
 		false,
+		false,
 	)
 
 	if entries.Entries == nil {
 		ack.Appended = true
+		ack.Heartbeat = true
 	} else {
 		log.Println("follower got updates from leader")
 		if entries.NewIndex < uint32(len(f.core.Entries)) {

@@ -1,10 +1,10 @@
 syntax = "proto3";
 
 message BaseRaftMessage {
-  bytes Ownerip = 1;
-  uint32 Ownerport = 2;
-  bytes Dest = 3;
-  uint32 Destport = 4;
+  bytes OwnerIp = 1;
+  uint32 OwnerPort = 2;
+  bytes DestIp = 3;
+  uint32 DestPort = 4;
   uint32 CurrTerm = 5;
 }
 
@@ -21,17 +21,28 @@ message AppendEntries {
 }
 
 message AppendAck {
-  BaseRaftMessage msg = 1;
+  BaseRaftMessage Msg = 1;
   bool Appended = 2;
+  bool Heartbeat = 3;
 }
 
 message RequestVote {
-  BaseRaftMessage msg = 1;
+  BaseRaftMessage Msg = 1;
     uint32 TopIndex = 2;
     uint32 TopTerm = 3;
 }
 
 message RequestAck {
-  BaseRaftMessage msg = 1;
+  BaseRaftMessage Msg = 1;
   bool Voted = 2;
+}
+
+package net_message;
+message Message {
+  oneof RaftMessage {
+    AppendEntries AppendEntries = 1;
+    AppendAck AppendAck = 2;
+    RequestVote RequestVote = 3;
+    RequestAck RequestAck = 4;
+  }
 }

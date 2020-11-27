@@ -57,7 +57,7 @@ func (l *Leader) PlayRole() RolePlayer {
 			}
 		default:
 			if msg := l.core.TryRecvClientMsg(); msg != nil {
-				log.Println("leader recieved message  -  leader_role.go")
+				log.Println("leader received message  -  leader_role.go")
 				switch rawClient := msg.(type) {
 				case *message.RawClientMessage:
 					for _, update := range updates {
