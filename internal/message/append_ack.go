@@ -11,13 +11,15 @@ type AppendAck struct {
 	BaseRaftMessage
 
 	Appended bool
-	// add field definng heartbeat ack or append
+	// field defining heartbeat or append
+	Heartbeat bool
 }
 
-func NewEntriesAck(base *BaseRaftMessage, appended bool) *AppendAck {
+func NewEntriesAck(base *BaseRaftMessage, appended bool, heartbeat bool) *AppendAck {
 	return &AppendAck{
 		BaseRaftMessage: *base,
-		Appended:    appended,
+		Appended:    	 appended,
+		Heartbeat: 		 heartbeat,
 	}
 }
 
@@ -69,6 +71,7 @@ func (aa *AppendAck) Unmarshal(data []byte) RaftMessage {
 				CurrTerm: appendAck.Msg.CurrTerm,
 			},
 			appendAck.Appended,
+
 		)
 	}
 	if err != nil {

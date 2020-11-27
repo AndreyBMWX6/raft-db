@@ -109,7 +109,6 @@ func NewReplicator(ctx context.Context,
 				}
 
 				var newEntries []*message.Entry
-				//log.Println("heartbeat:", heartbeat)
 				if heartbeat == false {
 					newEntries = entries
 				} else {
@@ -135,7 +134,6 @@ func NewReplicator(ctx context.Context,
 
 				log.Println("Node:", msg.Owner.String(), " send ", msgType, msg.CurrTerm,
 					" to Node:", msg.Dest.String())
-				//log.Println(len(msg.Entries), ":", msg.Entries, "delete later in leader_role.go")
 				l.core.SendRaftMsg(message.RaftMessage(msg))
 			default:
 			}

@@ -16,6 +16,13 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 		f.core.Term = msg.Term()
 		switch msg.Type() {
 		case message.AppendEntriesType:
+			switch entries := msg.(type) {
+			case *message.AppendEntries:
+				f.ApplyAppendEntries(entries)
+				//f.timer.Reset(f.core.Config.FollowerTimeout)
+			default:
+				log.Print("`AppendEntriesMessage` expected, got another type")
+			}
 			return RefreshFollower(f)
 		case message.RequestVoteType:
 			switch requestVote := msg.(type) {
@@ -51,16 +58,6 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 		}
 	}
 
-	switch msg.Type() {
-	case message.AppendEntriesType:
-		switch entries := msg.(type) {
-		case *message.AppendEntries:
-			f.ApplyAppendEntries(entries)
-			f.timer.Reset(f.core.Config.FollowerTimeout)
-		default:
-			log.Print("`AppendEntriesMessage` expected, got another type")
-		}
-	}
 
 	return nil
 }
