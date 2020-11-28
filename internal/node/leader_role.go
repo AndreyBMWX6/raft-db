@@ -57,11 +57,9 @@ func (l *Leader) PlayRole() RolePlayer {
 			}
 		default:
 			if msg := l.core.TryRecvClientMsg(); msg != nil {
-				log.Println("leader received message  -  leader_role.go")
 				switch rawClient := msg.(type) {
 				case *message.RawClientMessage:
 					for _, update := range updates {
-						log.Println("leader sent updates to followers")
 						update <-rawClient.Entry
 					}
 
@@ -140,4 +138,3 @@ func NewReplicator(ctx context.Context,
 		}
 	}
 }
-

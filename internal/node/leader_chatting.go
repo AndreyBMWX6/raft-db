@@ -47,16 +47,24 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 				}
 			}
 		case message.AppendAckType:
-			response := message.NewResponseClientMessage(
-				&message.BaseClientMessage{
-					Owner:   nil,
-					Dest:    nil,
-				},
-			)
+			switch ack := msg.(type) {
+			case *message.AppendAck:
+				if ack.Heartbeat == true {
+					return nil
+				} else {
+					response := message.NewResponseClientMessage(
+						&message.BaseClientMessage{
+							Owner:   nil,
+							Dest:    nil,
+						},
+					)
 
-			l.core.SendClientMsg(response)
-			log.Println("i must be here")
-			return nil
+					l.core.SendClientMsg(response)
+					return nil
+				}
+			default:
+				log.Print("`AppendAckMessage` expected, got another type")
+			}
 		default:
 			return nil
 		}

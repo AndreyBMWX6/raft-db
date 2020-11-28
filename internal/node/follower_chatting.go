@@ -77,7 +77,6 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		ack.Appended = true
 		ack.Heartbeat = true
 	} else {
-		log.Println("follower got updates from leader")
 		if entries.NewIndex < uint32(len(f.core.Entries)) {
 			ack.Appended = false
 		} else {
@@ -91,12 +90,11 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 					f.core.Entries = append(f.core.Entries[:entries.NewIndex],
 						entries.Entries...)
 				ack.Appended = true
-				log.Println("follower committed updates")
 			}
 		}
 	}
 
-	log.Println("Node:", ack.Owner.String(), " send AppendAck:", ack.CurrTerm,
+	log.Println("Node:", ack.Owner.String(), " send ", ack.Appended, "AppendAck:", ack.CurrTerm,
 		" to Node:", ack.Dest.String())
 	f.core.SendRaftMsg(
 		message.RaftMessage(ack),
