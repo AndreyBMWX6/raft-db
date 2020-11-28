@@ -135,9 +135,16 @@ func NewReplicator(ctx context.Context,
 				log.Println("Node:", msg.Owner.String(), " send ", msgType, msg.CurrTerm,
 					" to Node:", msg.Dest.String())
 
-				log.Println(l.core.Entries)
+				log.Println("leader log:", l.core.Entries)
 				var entriesTerms []uint32
 				for _,entry := range l.core.Entries {
+					entriesTerms = append(entriesTerms, entry.Term)
+				}
+				log.Println(entriesTerms)
+
+				log.Println("append entries:", msg.Entries)
+				entriesTerms = nil
+				for _,entry := range msg.Entries {
 					entriesTerms = append(entriesTerms, entry.Term)
 				}
 				log.Println(entriesTerms)

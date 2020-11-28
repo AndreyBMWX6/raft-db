@@ -94,15 +94,23 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		}
 	}
 
-	log.Println(f.core.Entries)
+	log.Println("Node:", ack.Owner.String(), " send ", ack.Appended, "AppendAck:", ack.CurrTerm,
+		" to Node:", ack.Dest.String())
+
+	log.Println("follower log:", f.core.Entries)
 	var entriesTerms []uint32
 	for _,entry := range f.core.Entries {
 		entriesTerms = append(entriesTerms, entry.Term)
 	}
 	log.Println(entriesTerms)
 
-	log.Println("Node:", ack.Owner.String(), " send ", ack.Appended, "AppendAck:", ack.CurrTerm,
-		" to Node:", ack.Dest.String())
+	log.Println("append entries:", entries.Entries)
+	entriesTerms = nil
+	for _,entry := range entries.Entries {
+		entriesTerms = append(entriesTerms, entry.Term)
+	}
+	log.Println(entriesTerms)
+
 	f.core.SendRaftMsg(
 		message.RaftMessage(ack),
 	)
