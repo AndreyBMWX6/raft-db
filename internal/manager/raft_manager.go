@@ -38,7 +38,7 @@ func (rm *RaftManager) ProcessMessage() {
 		select {
 		case msg := <-rm.RaftIn:
 			// change Term type from int to avoid int32 conversion()
-			// initializing baseraftmessage
+			// initializing BaseRaftMessage
 			baseRaftMsg := &net_message.BaseRaftMessage{}
 			ownerIp := msg.OwnerAddr().IP
 			var ownerPort = uint32(msg.OwnerAddr().Port)
@@ -53,11 +53,7 @@ func (rm *RaftManager) ProcessMessage() {
 
 			switch raftMsg := msg.(type) {
 			case *message.AppendEntries:
-				data := &net_message.AppendEntries{}
-				// initializing data
-				data.Msg = baseRaftMsg
-				data.PrevTerm = raftMsg.PrevTerm
-				data.NewIndex = raftMsg.NewIndex
+				// initializing entries
 				entries := make([]*net_message.Entry, 0)
 				if raftMsg.Entries == nil {
 					entries = nil
@@ -69,7 +65,18 @@ func (rm *RaftManager) ProcessMessage() {
 						entries = append(entries, Entry)
 					}
 				}
-				data.Entries = entries
+
+				// initializing data
+				data := &net_message.Message{
+				RaftMessage: &net_message.Message_AppendEntries{
+					AppendEntries: &net_message.AppendEntries{
+						Msg:      baseRaftMsg,
+						PrevTerm: raftMsg.PrevTerm,
+						NewIndex: raftMsg.NewIndex,
+						Entries:  entries,
+						},
+					},
+				}
 
 				// encrypting data
 				protoData, err := proto.Marshal(data)
@@ -77,18 +84,23 @@ func (rm *RaftManager) ProcessMessage() {
 					log.Fatal("marshaling error: ", err)
 					return
 				}
-				
+
 				// sending UDP
 				if _, err := conn.WriteToUDP(protoData, msg.DestAddr()); err != nil {
 					log.Fatal(err)
 					return
 				}
 			case *message.RequestVote:
-				data := &net_message.RequestVote{}
 				// initializing data
-				data.Msg = baseRaftMsg
-				data.TopIndex = raftMsg.TopIndex
-				data.TopTerm = raftMsg.TopTerm
+				data := &net_message.Message{
+					RaftMessage: &net_message.Message_RequestVote{
+						RequestVote: &net_message.RequestVote{
+							Msg:      baseRaftMsg,
+							TopIndex: raftMsg.TopIndex,
+							TopTerm:  raftMsg.TopTerm,
+						},
+					},
+				}
 
 				// encrypting data
 				protoData, err := proto.Marshal(data)
@@ -103,11 +115,16 @@ func (rm *RaftManager) ProcessMessage() {
 					return
 				}
 			case *message.AppendAck:
-				data := &net_message.AppendAck{}
 				// initializing data
-				data.Msg = baseRaftMsg
-				data.Appended = raftMsg.Appended
-				data.Heartbeat = raftMsg.Heartbeat
+				data := &net_message.Message{
+					RaftMessage: &net_message.Message_AppendAck{
+						AppendAck: &net_message.AppendAck{
+							Msg:       baseRaftMsg,
+							Appended:  raftMsg.Appended,
+							Heartbeat: raftMsg.Heartbeat,
+						},
+					},
+				}
 
 				// encrypting data
 				protoData, err := proto.Marshal(data)
@@ -122,10 +139,15 @@ func (rm *RaftManager) ProcessMessage() {
 					return
 				}
 			case *message.RequestAck:
-				data := &net_message.RequestAck{}
 				// initializing data
-				data.Msg = baseRaftMsg
-				data.Voted = raftMsg.Voted
+				data := &net_message.Message{
+					RaftMessage: &net_message.Message_RequestAck{
+						RequestAck: &net_message.RequestAck{
+							Msg:   baseRaftMsg,
+							Voted: raftMsg.Voted,
+						},
+					},
+				}
 
 				// encrypting data
 				protoData, err := proto.Marshal(data)
@@ -170,7 +192,7 @@ func (rm *RaftManager) ListenToUDP(conn *net.UDPConn) {
 				}
 			}
 			if pErr != nil {
-				log.Fatal("unmarshaling error: ", err)
+				log.Fatal("unmarshalling error: ", err)
 			}
 
 			if err != nil {
