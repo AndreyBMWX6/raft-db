@@ -89,9 +89,9 @@ func (n *RaftCore) TryRecvRaftMsg() message.RaftMessage {
 			case message.RequestVoteType:
 				msgType = "RequestVote:"
 			case message.AppendAckType:
-				switch requestAck := msg.(type) {
-				case *message.RequestAck:
-					msgType = strconv.FormatBool(requestAck.Voted) + " AppendAck:"
+				switch appendAck := msg.(type) {
+				case *message.AppendAck:
+					msgType = strconv.FormatBool(appendAck.Appended) + " AppendAck:"
 				default:
 				}
 			case message.RequestAckType:
