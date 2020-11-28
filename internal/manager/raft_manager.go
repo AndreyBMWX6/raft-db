@@ -172,9 +172,9 @@ func (rm *RaftManager) ProcessMessage() {
 func (rm *RaftManager) ListenToUDP(conn *net.UDPConn) {
 	recvBuff := make([]byte, 1024)
 	for {
-		if _, _, err := conn.ReadFromUDP(recvBuff); err == nil {
+		if length, _, err := conn.ReadFromUDP(recvBuff); err == nil {
 			msg := net_message.Message{}
-			pErr := proto.Unmarshal(recvBuff, &msg)
+			pErr := proto.Unmarshal(recvBuff[:length], &msg)
 			if pErr == nil {
 				switch msg.RaftMessage.(type) {
 				case *net_message.Message_AppendEntries:
@@ -192,6 +192,7 @@ func (rm *RaftManager) ListenToUDP(conn *net.UDPConn) {
 				}
 			}
 			if pErr != nil {
+				log.Println(recvBuff)
 				log.Fatal("unmarshalling error: ", err)
 			}
 
