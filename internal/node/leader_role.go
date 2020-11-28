@@ -59,6 +59,7 @@ func (l *Leader) PlayRole() RolePlayer {
 			if msg := l.core.TryRecvClientMsg(); msg != nil {
 				switch rawClient := msg.(type) {
 				case *message.RawClientMessage:
+					l.core.Entries = append(l.core.Entries, rawClient.Entry)
 					for _, update := range updates {
 						update <-rawClient.Entry
 					}
@@ -132,6 +133,9 @@ func NewReplicator(ctx context.Context,
 
 				log.Println("Node:", msg.Owner.String(), " send ", msgType, msg.CurrTerm,
 					" to Node:", msg.Dest.String())
+				if msgType == "AppendEntries:" {
+					log.Println(l.core.Entries)
+				}
 				l.core.SendRaftMsg(message.RaftMessage(msg))
 			default:
 			}

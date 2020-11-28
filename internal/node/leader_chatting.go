@@ -59,7 +59,7 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 						},
 					)
 
-					l.core.SendClientMsg(response)
+					go l.core.SendClientMsg(response)
 					return nil
 				}
 			default:
