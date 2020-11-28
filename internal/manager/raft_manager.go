@@ -95,6 +95,7 @@ func (rm *RaftManager) ProcessMessage() {
 				}
 
 				log.Println("in raft message proto structure we got:")
+				log.Println(data.GetAppendEntries().Entries)
 				var entriesTerms []uint32
 				for _,entry := range raftMsg.Entries {
 					entriesTerms = append(entriesTerms, entry.Term)
