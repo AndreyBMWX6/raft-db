@@ -114,7 +114,6 @@ func (n *RaftCore) TryRecvClientMsg() message.ClientMessage {
 	for {
 		select {
 		case msg := <-n.ClientIn:
-			log.Println("got msg from client")
 			return msg
 		default:
 			return nil
