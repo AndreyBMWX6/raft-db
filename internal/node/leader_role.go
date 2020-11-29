@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"../manager"
 	"../message"
 )
 
@@ -39,6 +40,13 @@ func (l *Leader) ReleaseNode() *RaftCore {
 }
 
 func (l *Leader) PlayRole() RolePlayer {
+	cm := &manager.ClientManager{
+		ClientIn: l.core.Config.ClientOut,
+		ClientOut: l.core.Config.ClientIn,
+	}
+
+	go cm.ProcessEntries()
+
 	ctx, cancel := context.WithCancel(l.ctx)
 	defer cancel()
 	updates := make([]chan *message.Entry, 0)

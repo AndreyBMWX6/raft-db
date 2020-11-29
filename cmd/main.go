@@ -16,13 +16,7 @@ func main() {
 		RaftOut: raftNode.Config.RaftIn,
 	}
 
-	cm := &manager.ClientManager{
-		ClientIn: raftNode.Config.ClientOut,
-		ClientOut: raftNode.Config.ClientIn,
-	}
-
 	go rm.ProcessMessage()
-	go cm.ProcessEntries()
 
 	node.RunRolePlayer(candidate)
 }
