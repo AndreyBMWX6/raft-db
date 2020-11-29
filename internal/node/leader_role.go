@@ -45,10 +45,11 @@ func (l *Leader) PlayRole() RolePlayer {
 		ClientOut: l.core.Config.ClientIn,
 	}
 
-	go cm.ProcessEntries()
-
 	ctx, cancel := context.WithCancel(l.ctx)
 	defer cancel()
+
+	go cm.ProcessEntries(ctx)
+
 	updates := make([]chan *message.Entry, 0)
 
 	for _, neighbour := range l.core.Neighbors {
