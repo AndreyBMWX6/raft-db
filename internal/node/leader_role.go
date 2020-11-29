@@ -70,10 +70,26 @@ func (l *Leader) PlayRole() RolePlayer {
 				case *message.RawClientMessage:
 					rawClient.Entry.Term = l.core.Term
 					l.core.Entries = append(l.core.Entries, rawClient.Entry)
+
+					log.Println("leader log:    ", l.core.Entries)
+					var entriesTerms []uint32
+					for _,entry := range l.core.Entries {
+						entriesTerms = append(entriesTerms, entry.Term)
+					}
+					log.Println("log terms:     ", entriesTerms)
+
+					var entries []*message.Entry
+					entries = append(entries, rawClient.Entry)
+					log.Println("append entries:", entries)
+					entriesTerms = nil
+					for _,entry := range entries {
+						entriesTerms = append(entriesTerms, entry.Term)
+					}
+					log.Println("entries terms: ", entriesTerms)
+
 					for _, update := range updates {
 						update <-rawClient.Entry
 					}
-
 				default:
 					log.Print("`RawClientMessage` expected, got another type")
 				}
@@ -96,14 +112,7 @@ func NewReplicator(ctx context.Context,
 		var heartbeat = false
 
 		var entries []*message.Entry
-		var newIndex uint32 = 0
-		if len(l.core.Entries) != 0 {
-			newIndex = uint32(len(l.core.Entries) - 1)
-		}
-		var prevTerm uint32 = 0
-		if newIndex > 0 {
-			prevTerm = l.core.Entries[newIndex - 1].Term
-		}
+		var newEntries []*message.Entry
 
 		for {
 			select {
@@ -115,13 +124,23 @@ func NewReplicator(ctx context.Context,
 				} else {
 					heartbeat = false
 					entries = append(entries, u)
+					newEntries = append(newEntries, u)
 				}
 
-				var newEntries []*message.Entry
+				// make loop sending appendEntries until got response
 				if heartbeat == false {
-					newEntries = entries
+
 				} else {
 					newEntries = nil
+				}
+
+				var newIndex uint32 = 0
+				if len(l.core.Entries) != 0 {
+					newIndex = uint32(len(l.core.Entries) - 1)
+				}
+				var prevTerm uint32 = 0
+				if newIndex > 0 {
+					prevTerm = l.core.Entries[newIndex - 1].Term
 				}
 
 				msg := message.NewAppendEntries(
@@ -144,21 +163,21 @@ func NewReplicator(ctx context.Context,
 				log.Println("Node:", msg.Owner.String(), " send ", msgType, msg.CurrTerm,
 					" to Node:", msg.Dest.String())
 
-				log.Println("leader log:", l.core.Entries)
-				var entriesTerms []uint32
-				for _,entry := range l.core.Entries {
-					entriesTerms = append(entriesTerms, entry.Term)
+				// may be will log append entries for each node later to show entries in case,
+				//when some nodes won't commit updates for the first time
+				/*
+				if msgType == "AppendEntries:" {
+					log.Println("append entries:", msg.Entries)
+					var entriesTerms []uint32
+					for _,entry := range msg.Entries {
+						entriesTerms = append(entriesTerms, entry.Term)
+					}
+					log.Println("entries terms: ", entriesTerms)
 				}
-				log.Println(entriesTerms)
-
-				log.Println("append entries:", msg.Entries)
-				entriesTerms = nil
-				for _,entry := range msg.Entries {
-					entriesTerms = append(entriesTerms, entry.Term)
-				}
-				log.Println(entriesTerms)
+				*/
 
 				l.core.SendRaftMsg(message.RaftMessage(msg))
+				newEntries = nil
 			default:
 			}
 		}

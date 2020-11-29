@@ -19,7 +19,6 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 			switch entries := msg.(type) {
 			case *message.AppendEntries:
 				f.ApplyAppendEntries(entries)
-				//f.timer.Reset(f.core.Config.FollowerTimeout)
 			default:
 				log.Print("`AppendEntriesMessage` expected, got another type")
 			}
@@ -77,8 +76,15 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		ack.Appended = true
 		ack.Heartbeat = true
 	} else {
+		log.Println("append entries:", entries.Entries)
+		var entriesTerms []uint32
+		for _,entry := range entries.Entries {
+			entriesTerms = append(entriesTerms, entry.Term)
+		}
+		log.Println("entries terms: ", entriesTerms)
+
+		// metadata check
 		if entries.NewIndex < uint32(len(f.core.Entries)) {
-			log.Println("NewIndex check failed")
 			ack.Appended = false
 		} else {
 			var prevTerm uint32 = 0
@@ -86,7 +92,6 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 				prevTerm = f.core.Entries[entries.NewIndex-1].Term
 			}
 			if entries.PrevTerm != prevTerm {
-				log.Println("PrevTerm check failed")
 				ack.Appended = false
 			} else {
 					f.core.Entries = append(f.core.Entries[:entries.NewIndex],
@@ -94,24 +99,16 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 				ack.Appended = true
 			}
 		}
+		log.Println("follower log:  ", f.core.Entries)
+		entriesTerms = nil
+		for _,entry := range f.core.Entries {
+			entriesTerms = append(entriesTerms, entry.Term)
+		}
+		log.Println("log terms:     ", entriesTerms)
 	}
 
 	log.Println("Node:", ack.Owner.String(), " send ", ack.Appended, "AppendAck:", ack.CurrTerm,
 		" to Node:", ack.Dest.String())
-
-	log.Println("follower log:", f.core.Entries)
-	var entriesTerms []uint32
-	for _,entry := range f.core.Entries {
-		entriesTerms = append(entriesTerms, entry.Term)
-	}
-	log.Println(entriesTerms)
-
-	log.Println("append entries:", entries.Entries)
-	entriesTerms = nil
-	for _,entry := range entries.Entries {
-		entriesTerms = append(entriesTerms, entry.Term)
-	}
-	log.Println(entriesTerms)
 
 	f.core.SendRaftMsg(
 		message.RaftMessage(ack),
