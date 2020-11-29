@@ -78,6 +78,7 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		ack.Heartbeat = true
 	} else {
 		if entries.NewIndex < uint32(len(f.core.Entries)) {
+			log.Println("NewIndex check failed")
 			ack.Appended = false
 		} else {
 			var prevTerm uint32 = 0
@@ -85,6 +86,7 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 				prevTerm = f.core.Entries[entries.NewIndex-1].Term
 			}
 			if entries.PrevTerm != prevTerm {
+				log.Println("PrevTerm check failed")
 				ack.Appended = false
 			} else {
 					f.core.Entries = append(f.core.Entries[:entries.NewIndex],

@@ -58,28 +58,12 @@ func (rm *RaftManager) ProcessMessage() {
 				if raftMsg.Entries == nil {
 					entries = nil
 				} else {
-					log.Println("raft manager got:")
-					log.Println(raftMsg.Entries)
-					var entriesTerms []uint32
-					for _,entry := range raftMsg.Entries {
-						entriesTerms = append(entriesTerms, entry.Term)
-					}
-					log.Println(entriesTerms)
-
 					for _, entry := range raftMsg.Entries {
 						Entry := &net_message.Entry{}
 						Entry.Term = entry.Term
 						Entry.Query = entry.Query
 						entries = append(entries, Entry)
 					}
-
-					log.Println("in proto structure we got:")
-					log.Println(entries)
-					entriesTerms = nil
-					for _,entry := range entries {
-						entriesTerms = append(entriesTerms, entry.Term)
-					}
-					log.Println(entriesTerms)
 				}
 
 				// initializing data
@@ -93,14 +77,6 @@ func (rm *RaftManager) ProcessMessage() {
 						},
 					},
 				}
-
-				log.Println("in raft message proto structure we got:")
-				log.Println(data.GetAppendEntries().Entries)
-				var entriesTerms []uint32
-				for _,entry := range raftMsg.Entries {
-					entriesTerms = append(entriesTerms, entry.Term)
-				}
-				log.Println(entriesTerms)
 
 				// encrypting data
 				protoData, err := proto.Marshal(data)
@@ -203,19 +179,7 @@ func (rm *RaftManager) ListenToUDP(conn *net.UDPConn) {
 				switch msg.RaftMessage.(type) {
 				case *net_message.Message_AppendEntries:
 					var appendEntries *message.AppendEntries
-					mes := appendEntries.Unmarshal(&msg)
-					switch app := mes.(type) {
-					case *message.AppendEntries:
-						log.Println("after unmarshalling we got:")
-						log.Println(app.Entries)
-						var entriesTerms []uint32
-						for _,entry := range app.Entries {
-							entriesTerms = append(entriesTerms, entry.Term)
-						}
-						log.Println(entriesTerms)
-					default:
-					}
-					rm.RaftOut <- mes
+					rm.RaftOut <- appendEntries.Unmarshal(&msg)
 				case *net_message.Message_AppendAck:
 					var appendAck *message.AppendAck
 					rm.RaftOut <- appendAck.Unmarshal(&msg)
