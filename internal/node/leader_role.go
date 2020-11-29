@@ -72,21 +72,21 @@ func (l *Leader) PlayRole() RolePlayer {
 					l.core.Entries = append(l.core.Entries, rawClient.Entry)
 
 					log.Println("Leader added new entry")
-					log.Println("Leader log:    ", l.core.Entries)
+					log.Println("Leader log:     ", l.core.Entries)
 					var entriesTerms []uint32
 					for _,entry := range l.core.Entries {
 						entriesTerms = append(entriesTerms, entry.Term)
 					}
-					log.Println("Log terms:     ", entriesTerms)
+					log.Println("Log terms:      ", entriesTerms)
 
 					var entries []*message.Entry
 					entries = append(entries, rawClient.Entry)
-					log.Println("Append entries:", entries)
+					log.Println("Append entries: ", entries)
 					entriesTerms = nil
 					for _,entry := range entries {
 						entriesTerms = append(entriesTerms, entry.Term)
 					}
-					log.Println("Entries terms: ", entriesTerms)
+					log.Println("Entries terms:  ", entriesTerms)
 
 					for _, update := range updates {
 						update <-rawClient.Entry

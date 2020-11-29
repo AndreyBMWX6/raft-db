@@ -109,7 +109,7 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		for _,entry := range f.core.Entries {
 			entriesTerms = append(entriesTerms, entry.Term)
 		}
-		log.Println("log terms:     ", entriesTerms)
+		log.Println("Log terms:     ", entriesTerms)
 	}
 
 	log.Println("Node:", ack.Owner.String(), " send ", ack.Appended, "AppendAck:", ack.CurrTerm,
