@@ -131,7 +131,7 @@ func (n *RaftCore) SendClientMsg(msg message.ClientMessage)  {
 	n.ClientOut <- msg
 }
 
-func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) {
+func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) bool {
 	ack := message.NewRequestAck(
 		&message.BaseRaftMessage{
 			Owner:    core.Addr,
@@ -168,4 +168,5 @@ func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) {
 	core.SendRaftMsg(
 		message.RaftMessage(ack),
 	)
+	return ack.Voted
 }

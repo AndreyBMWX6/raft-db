@@ -42,9 +42,9 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 				} else {
 					f.core.Voted = true
 				}
-				f.core.ProcessRequestVote(request)
+				fVoted := f.core.ProcessRequestVote(request)
 				
-				if msg.Term() > oldFollowerTerm {
+				if fVoted == true {
 					log.Println("[follower:", oldFollowerTerm, "  -> follower:", msg.Term(), " ]")
 					return BecomeFollower(f)
 				} else {
