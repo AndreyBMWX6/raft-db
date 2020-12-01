@@ -19,6 +19,7 @@ type Leader struct {
 	core *RaftCore
 	ctx  context.Context
 	heartbeat *time.Ticker
+	updates map[string]chan[]*message.Entry
 
 	// needed to define, when more than half committed and send response yo client
 	//replicated int
@@ -30,6 +31,7 @@ func BecomeLeader(player RolePlayer) *Leader {
 		core:      core,
 		heartbeat: time.NewTicker(core.Config.HeartbeatTimeout),
 		ctx:       context.Background(),
+		updates:   make(map[string]chan []*message.Entry, len(core.Neighbors)),
 	}
 }
 
@@ -50,18 +52,16 @@ func (l *Leader) PlayRole() RolePlayer {
 
 	go cm.ProcessEntries(ctx)
 
-	updates := make([]chan *message.Entry, 0)
-
 	for _, neighbour := range l.core.Neighbors {
-		update := make(chan *message.Entry)
+		update := make(chan []*message.Entry)
+		l.updates[neighbour.String()] = update
 		go NewReplicator(ctx, l, neighbour, update)()
-		updates = append(updates, update)
 	}
 
 	for {
 		select {
 		case <-l.heartbeat.C:
-			for _, update := range updates {
+			for _, update := range l.updates {
 				update <- nil
 			}
 		default:
@@ -88,8 +88,10 @@ func (l *Leader) PlayRole() RolePlayer {
 					}
 					log.Println("Entries terms:  ", entriesTerms)
 
-					for _, update := range updates {
-						update <-rawClient.Entry
+					for _, update := range l.updates {
+						upd := make([]*message.Entry, 1)
+						upd[0] = rawClient.Entry
+						update <-upd
 					}
 				default:
 					log.Print("`RawClientMessage` expected, got another type")
@@ -107,13 +109,33 @@ func (l *Leader) PlayRole() RolePlayer {
 func NewReplicator(ctx context.Context,
 				   l *Leader,
 				   follower net.UDPAddr,
-				   update <-chan *message.Entry) func() {
+				   update <-chan []*message.Entry) func() {
 	return func() {
 		// helps switching between sending heartbeat and new entries
 		var heartbeat = false
 
-		var entries []*message.Entry
-		var newEntries []*message.Entry
+		var entries []*message.Entry // current entries
+		//var log []*message.Entry // full log
+		var newIndex uint32
+		var prevTerm uint32
+
+		// one of the solutions is use
+		// 1-elem slice made from 1 nil
+		//for true condition of committed var
+		// and 2-elem slice made from 2 nil for false
+		// 0 length entries slice signals,
+		//that node have committed changes
+		//so entries can be cleared
+		// extra bool chan can be used instead
+
+		newIndex = 0
+		if len(l.core.Entries) != 0 {
+			newIndex = uint32(len(l.core.Entries) - 1)
+		}
+		prevTerm = 0
+		if newIndex > 0 {
+			prevTerm = l.core.Entries[newIndex - 1].Term
+		}
 
 		for {
 			select {
@@ -123,25 +145,28 @@ func NewReplicator(ctx context.Context,
 				if u == nil {
 					heartbeat = true
 				} else {
-					heartbeat = false
-					entries = append(entries, u)
-					newEntries = append(newEntries, u)
-				}
+					if len(u) == 1 && u[0] == nil {
+						// clear entries request
+						entries = nil
+					} else {
+						if len(u) == 2 && u[0] == nil && u[1] == nil {
+							// retry append request
+							heartbeat = false
 
-				// make loop sending appendEntries until got response
-				if heartbeat == false {
-
-				} else {
-					newEntries = nil
-				}
-
-				var newIndex uint32 = 0
-				if len(l.core.Entries) != 0 {
-					newIndex = uint32(len(l.core.Entries) - 1)
-				}
-				var prevTerm uint32 = 0
-				if newIndex > 0 {
-					prevTerm = l.core.Entries[newIndex - 1].Term
+							if newIndex != 0 {
+								newIndex--
+							}
+							if newIndex > 0 {
+								prevTerm = l.core.Entries[newIndex - 1].Term
+							} else {
+								prevTerm = 0
+							}
+						} else {
+							heartbeat = false
+							newIndex = uint32(len(l.core.Entries) - 1)
+							entries = l.core.Entries[newIndex:]
+						}
+					}
 				}
 
 				msg := message.NewAppendEntries(
@@ -152,8 +177,16 @@ func NewReplicator(ctx context.Context,
 					},
 					prevTerm,
 					newIndex,
-					newEntries,
+					entries,
 				)
+
+				// make loop sending appendEntries until got response
+				if heartbeat == true {
+					msg.Entries = nil
+				} else {
+					newIndex++
+				}
+
 				var msgType string
 				if len(msg.Entries) == 0 {
 					msgType = "Heartbeat:"
@@ -167,18 +200,17 @@ func NewReplicator(ctx context.Context,
 				// may be will log append entries for each node later to show entries in case,
 				//when some nodes won't commit updates for the first time
 				/*
-				if msgType == "AppendEntries:" {
-					log.Println("append entries:", msg.Entries)
-					var entriesTerms []uint32
-					for _,entry := range msg.Entries {
-						entriesTerms = append(entriesTerms, entry.Term)
+					if msgType == "AppendEntries:" {
+						log.Println("append entries:", msg.Entries)
+						var entriesTerms []uint32
+						for _,entry := range msg.Entries {
+							entriesTerms = append(entriesTerms, entry.Term)
+						}
+						log.Println("entries terms: ", entriesTerms)
 					}
-					log.Println("entries terms: ", entriesTerms)
-				}
 				*/
 
 				l.core.SendRaftMsg(message.RaftMessage(msg))
-				newEntries = nil
 			default:
 			}
 		}
