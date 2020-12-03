@@ -53,18 +53,24 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 					if ack.Heartbeat == true {
 						return nil
 					} else {
-						response := message.NewResponseClientMessage(
-							&message.BaseClientMessage{
-								Owner: nil,
-								Dest:  nil,
-							},
-						)
+						l.replicated++
+
 						// a sign of committed changes
 						success := make([]*message.Entry, 1)
 						success[0] = nil
 						l.updates[ack.OwnerAddr().String()]<-success
 
-						go l.core.SendClientMsg(response)
+						if l.replicated > ((len(l.core.Neighbors) + 1) / 2) {
+							response := message.NewResponseClientMessage(
+								&message.BaseClientMessage{
+									Owner: nil,
+									Dest:  nil,
+								},
+							)
+
+							go l.core.SendClientMsg(response)
+							l.replicated = 0
+						}
 						return nil
 					}
 				} else {

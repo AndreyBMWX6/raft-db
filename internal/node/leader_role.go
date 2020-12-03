@@ -22,7 +22,7 @@ type Leader struct {
 	updates map[string]chan[]*message.Entry
 
 	// needed to define, when more than half committed and send response yo client
-	//replicated int
+	replicated int
 }
 
 func BecomeLeader(player RolePlayer) *Leader {
@@ -32,6 +32,7 @@ func BecomeLeader(player RolePlayer) *Leader {
 		heartbeat: time.NewTicker(core.Config.HeartbeatTimeout),
 		ctx:       context.Background(),
 		updates:   make(map[string]chan []*message.Entry, len(core.Neighbors)),
+		replicated: 0,
 	}
 }
 
@@ -70,6 +71,7 @@ func (l *Leader) PlayRole() RolePlayer {
 				case *message.RawClientMessage:
 					rawClient.Entry.Term = l.core.Term
 					l.core.Entries = append(l.core.Entries, rawClient.Entry)
+					l.replicated++
 
 					log.Println("Leader added new entry")
 					log.Println("Leader log:     ", l.core.Entries)
@@ -185,10 +187,12 @@ func NewReplicator(ctx context.Context,
 					entries,
 				)
 
+
 				// make loop sending appendEntries until got response
 				if heartbeat == true {
-					msg.Entries = nil
+				//	msg.Entries = nil
 				}
+
 
 				var msgType string
 				if len(msg.Entries) == 0 {

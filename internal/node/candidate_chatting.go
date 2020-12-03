@@ -66,7 +66,7 @@ func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 				log.Print("`RequestAckMessage` expected, got another type")
 			}
 
-			if len(c.voters) >= c.maxVotes {
+			if len(c.voters) > c.maxVotes {
 				log.Println("[candidate:", c.core.Term, " -> leader:", c.core.Term, "   ]")
 				return BecomeLeader(c)
 			}
