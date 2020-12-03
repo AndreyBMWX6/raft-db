@@ -108,7 +108,8 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 				if entries.PrevTerm != prevTerm {
 					ack.Appended = false
 					log.Println("Failed to add new entry - Metadata checks error: " +
-						"Follower entry's at index", entries.NewIndex - 1, "term", " != PrevTerm in AppendEntries")
+						"Follower entry's at index", entries.NewIndex - 1, "term", " != PrevTerm in AppendEntries",
+						prevTerm, "!=", entries.PrevTerm)
 				} else {
 					if uint32(cap(f.core.Entries)) >= entries.NewIndex {
 						f.core.Entries = append(f.core.Entries[:entries.NewIndex],
