@@ -146,20 +146,13 @@ func NewReplicator(ctx context.Context,
 							heartbeat = false
 
 							if newIndex != 0 {
-								log.Println("old newIndex:", newIndex)
 								newIndex--
-								log.Println("new newIndex", newIndex)
 								entries = l.core.Entries[newIndex:]
-								log.Println(entries)
 							}
 							if newIndex > 0 {
-								log.Println("old prevTerm", prevTerm)
 								prevTerm = l.core.Entries[newIndex - 1].Term
-								log.Println("new prevTerm", prevTerm)
 							} else {
-								log.Println("old prevTerm", prevTerm)
 								prevTerm = 0
-								log.Println("new prevTerm", prevTerm)
 							}
 						} else {
 							heartbeat = false
@@ -177,7 +170,6 @@ func NewReplicator(ctx context.Context,
 							}
 
 							entries = l.core.Entries[newIndex:]
-							newIndex++
 						}
 					}
 				}
@@ -189,7 +181,7 @@ func NewReplicator(ctx context.Context,
 						CurrTerm: l.core.Term,
 					},
 					prevTerm,
-					newIndex - 1,
+					newIndex,
 					entries,
 				)
 
