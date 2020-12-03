@@ -84,20 +84,18 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 		log.Println("Entries terms: ", entriesTerms)
 
 		// metadata check
-		if entries.NewIndex < uint32(len(f.core.Entries)) {
+		if entries.NewIndex > uint32(len(f.core.Entries)) {
 			ack.Appended = false
 			log.Println("Failed to add new entry - Metadata checks error: " +
-				"Follower log length > NewIndex in AppendEntries")
+				"Follower log length: < NewIndex in AppendEntries    ",
+				uint32(len(f.core.Entries)), " < ", entries.NewIndex)
 		} else {
 			var prevTerm uint32 = 0
 			if len(f.core.Entries) != 0 && entries.NewIndex > 0 {
 				prevTerm = f.core.Entries[entries.NewIndex-1].Term
 			}
-			if entries.PrevTerm != prevTerm {
-				ack.Appended = false
-				log.Println("Failed to add new entry - Metadata checks error: " +
-					"Follower entry's at index", entries.NewIndex - 1, "term", " != PrevTerm in AppendEntries")
-			} else {
+
+			if len(f.core.Entries) == 0 {
 				if uint32(cap(f.core.Entries)) >= entries.NewIndex {
 					f.core.Entries = append(f.core.Entries[:entries.NewIndex],
 						entries.Entries...)
@@ -106,8 +104,24 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 				}
 				ack.Appended = true
 				log.Println("New entry added successfully")
+			} else {
+				if entries.PrevTerm != prevTerm {
+					ack.Appended = false
+					log.Println("Failed to add new entry - Metadata checks error: " +
+						"Follower entry's at index", entries.NewIndex - 1, "term", " != PrevTerm in AppendEntries")
+				} else {
+					if uint32(cap(f.core.Entries)) >= entries.NewIndex {
+						f.core.Entries = append(f.core.Entries[:entries.NewIndex],
+							entries.Entries...)
+					} else {
+						f.core.Entries = append(f.core.Entries, entries.Entries...)
+					}
+					ack.Appended = true
+					log.Println("New entry added successfully")
+				}
 			}
 		}
+
 		log.Println("Follower log:  ", f.core.Entries)
 		entriesTerms = nil
 		for _,entry := range f.core.Entries {

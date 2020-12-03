@@ -128,15 +128,6 @@ func NewReplicator(ctx context.Context,
 		//so entries can be cleared
 		// extra bool chan can be used instead
 
-		newIndex = 0
-		if len(l.core.Entries) != 0 {
-			newIndex = uint32(len(l.core.Entries) - 1)
-		}
-		prevTerm = 0
-		if newIndex > 0 {
-			prevTerm = l.core.Entries[newIndex - 1].Term
-		}
-
 		for {
 			select {
 			case <-ctx.Done():
@@ -151,20 +142,42 @@ func NewReplicator(ctx context.Context,
 					} else {
 						if len(u) == 2 && u[0] == nil && u[1] == nil {
 							// retry append request
+							log.Println("retry request")
 							heartbeat = false
 
 							if newIndex != 0 {
+								log.Println("old newIndex:", newIndex)
 								newIndex--
+								log.Println("new newIndex", newIndex)
+								entries = l.core.Entries[newIndex:]
+								log.Println(entries)
 							}
 							if newIndex > 0 {
+								log.Println("old prevTerm", prevTerm)
 								prevTerm = l.core.Entries[newIndex - 1].Term
+								log.Println("new prevTerm", prevTerm)
 							} else {
+								log.Println("old prevTerm", prevTerm)
 								prevTerm = 0
+								log.Println("new prevTerm", prevTerm)
 							}
 						} else {
 							heartbeat = false
-							newIndex = uint32(len(l.core.Entries) - 1)
+
+							if len(l.core.Entries) == 0 {
+								newIndex = 0
+							} else {
+								newIndex = uint32(len(l.core.Entries) - 1)
+							}
+
+							if newIndex < 1 {
+								prevTerm = 0
+							} else {
+								prevTerm = l.core.Entries[newIndex - 1].Term
+							}
+
 							entries = l.core.Entries[newIndex:]
+							newIndex++
 						}
 					}
 				}
@@ -176,15 +189,13 @@ func NewReplicator(ctx context.Context,
 						CurrTerm: l.core.Term,
 					},
 					prevTerm,
-					newIndex,
+					newIndex - 1,
 					entries,
 				)
 
 				// make loop sending appendEntries until got response
 				if heartbeat == true {
 					msg.Entries = nil
-				} else {
-					newIndex++
 				}
 
 				var msgType string
@@ -197,18 +208,17 @@ func NewReplicator(ctx context.Context,
 				log.Println("Node:", msg.Owner.String(), " send ", msgType, msg.CurrTerm,
 					" to Node:", msg.Dest.String())
 
-				// may be will log append entries for each node later to show entries in case,
-				//when some nodes won't commit updates for the first time
-				/*
-					if msgType == "AppendEntries:" {
-						log.Println("append entries:", msg.Entries)
+
+					if msgType == "AppendEntries:" && len(u) == 2 && u[0] == nil && u[1] == nil {
+						// retry append request
+						log.Println("Append entries: ", msg.Entries)
 						var entriesTerms []uint32
 						for _,entry := range msg.Entries {
 							entriesTerms = append(entriesTerms, entry.Term)
 						}
-						log.Println("entries terms: ", entriesTerms)
+						log.Println("Entries terms:  ", entriesTerms)
 					}
-				*/
+
 
 				l.core.SendRaftMsg(message.RaftMessage(msg))
 			default:
