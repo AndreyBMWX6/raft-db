@@ -51,7 +51,7 @@ func (l *Leader) PlayRole() RolePlayer {
 	ctx, cancel := context.WithCancel(l.ctx)
 	defer cancel()
 
-	go cm.ProcessEntries(ctx)
+	go cm.ProcessEntries()
 
 	for _, neighbour := range l.core.Neighbors {
 		update := make(chan []*message.Entry)
