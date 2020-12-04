@@ -6,7 +6,6 @@ import (
 	"net"
 	"time"
 
-	"../manager"
 	"../message"
 )
 
@@ -43,15 +42,8 @@ func (l *Leader) ReleaseNode() *RaftCore {
 }
 
 func (l *Leader) PlayRole() RolePlayer {
-	cm := &manager.ClientManager{
-		ClientIn: l.core.Config.ClientOut,
-		ClientOut: l.core.Config.ClientIn,
-	}
-
 	ctx, cancel := context.WithCancel(l.ctx)
 	defer cancel()
-
-	go cm.ProcessEntries()
 
 	for _, neighbour := range l.core.Neighbors {
 		update := make(chan []*message.Entry)
