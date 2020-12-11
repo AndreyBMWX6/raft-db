@@ -44,28 +44,37 @@ type RaftCore struct {
 	Voted bool
 
 	// Raft IO
-	RaftIn  <-chan message.RaftMessage
-	RaftOut chan<- message.RaftMessage
+	RaftIn  chan message.RaftMessage
+	RaftOut chan message.RaftMessage
 
 	// Client IO
-	ClientIn  <-chan message.ClientMessage
-	ClientOut chan<- message.ClientMessage
+	ClientIn  chan message.ClientMessage
+	ClientOut chan message.ClientMessage
 }
 
 // may be change value initialization to address
 func NewRaftCore() *RaftCore {
 	cfg := config.NewConfig()
+
+	// Raft IO
+	var raftIn  = make(chan message.RaftMessage)
+	var raftOut = make(chan message.RaftMessage)
+
+	// Client IO
+	var clientIn  = make(chan message.ClientMessage)
+	var clientOut = make(chan message.ClientMessage)
+
 	return &RaftCore{
 		Config:    cfg,
 		Addr:      cfg.Addr,
 		Neighbors: cfg.Neighbors,
 		Term:      cfg.Term,
 		Entries:   cfg.Entries,
-		Voted:     cfg.Voted,
-		RaftIn:    cfg.RaftIn,
-		RaftOut:   cfg.RaftOut,
-		ClientIn:  cfg.ClientIn,
-		ClientOut: cfg.ClientOut,
+		Voted:     false,
+		RaftIn:    raftIn,
+		RaftOut:   raftOut,
+		ClientIn:  clientIn,
+		ClientOut: clientOut,
 	}
 }
 

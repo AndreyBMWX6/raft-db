@@ -18,6 +18,7 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 		case message.AppendEntriesType:
 			switch entries := msg.(type) {
 			case *message.AppendEntries:
+				f.leader = &entries.Owner
 				f.ApplyAppendEntries(entries)
 			default:
 				log.Print("`AppendEntriesMessage` expected, got another type")
@@ -140,5 +141,34 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 }
 
 func (f *Follower) ApplyClientMessage(msg message.ClientMessage) {
-	f.core.SendClientMsg(msg)
+	switch clientMsg := msg.(type) {
+	case *message.RawClientMessage:
+		if clientMsg.ReqType == message.GetRequestType {
+			response := message.NewResponseClientMessage(
+				&message.BaseClientMessage{
+					Owner: nil,
+					Dest:  nil,
+				},
+				false,
+			)
+
+			go f.core.SendClientMsg(response)
+		} else {
+			response := message.NewResponseClientMessage(
+				&message.BaseClientMessage{
+					Owner: nil,
+					Dest:  nil,
+				},
+				true,
+			)
+
+			port := f.leader.String()[len(f.leader.String()) - 4:]
+			leaderURL := "http://localhost:" + port
+			response.LeaderURL = leaderURL
+
+			go f.core.SendClientMsg(response)
+		}
+	default:
+		log.Print("`RawClientMessage` expected, got another type")
+	}
 }

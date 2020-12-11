@@ -26,6 +26,14 @@ const (
 	ResponseClientAnswer
 )
 
+// Http Request Types
+const (
+	PostRequestType = iota
+	GetRequestType
+	PutRequestType
+	DeleteRequestType
+)
+
 // Inter-node Message Type
 // Nodes communicate each other with
 // messages realizing that interface
@@ -57,8 +65,9 @@ type BaseRaftMessage struct {
 }
 
 type BaseClientMessage struct {
-	Owner net.Addr
-	Dest  net.Addr
+	Owner   net.Addr
+	Dest    net.Addr
+	ReqType int
 }
 
 type RawClientMessage struct {
@@ -90,11 +99,14 @@ func (rc *RawClientMessage) Type() int {
 
 type ResponseClientMessage struct {
 	BaseClientMessage
+	Redirect bool
+	LeaderURL string
 }
 
-func NewResponseClientMessage(base *BaseClientMessage) *RawClientMessage {
-	return &RawClientMessage{
+func NewResponseClientMessage(base *BaseClientMessage, redirect bool) *ResponseClientMessage {
+	return &ResponseClientMessage{
 		BaseClientMessage: *base,
+		Redirect: redirect,
 	}
 }
 

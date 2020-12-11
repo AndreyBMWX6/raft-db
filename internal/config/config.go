@@ -18,15 +18,10 @@ type Config struct {
 
 	Term uint32
 	Entries []*message.Entry
-	Voted bool
+}
 
-	// Raft IO
-	RaftIn  chan message.RaftMessage
-	RaftOut chan message.RaftMessage
-
-	// Client IO
-	ClientIn  chan message.ClientMessage
-	ClientOut chan message.ClientMessage
+type RouterConfig struct {
+	URLs  []string
 }
 
 func NewConfig() *Config {
@@ -52,11 +47,7 @@ func NewConfig() *Config {
 		neighbors = append(neighbors, *nborAddr)
 	}
 
-	var raftIn  = make(chan message.RaftMessage)
-	var raftOut = make(chan message.RaftMessage)
 
-	var clientIn  = make(chan message.ClientMessage)
-	var clientOut = make(chan message.ClientMessage)
 
 	return &Config{
 		FollowerTimeout:  4000*time.Millisecond,
@@ -66,10 +57,20 @@ func NewConfig() *Config {
 		Neighbors: neighbors,
 		Term:      0,
 		Entries:   nil,
-		Voted: false,
-		RaftIn:    raftIn,
-		RaftOut:   raftOut,
-		ClientIn:  clientIn,
-		ClientOut: clientOut,
+	}
+}
+
+func NewRouterConfig() *RouterConfig {
+	urls := []string{
+		"http://localhost:8081",
+		"http://localhost:8082",
+		"http://localhost:8083",
+		"http://localhost:8084",
+		"http://localhost:8085",
+		"http://localhost:8086",
+	}
+
+	return &RouterConfig{
+		URLs:  urls,
 	}
 }

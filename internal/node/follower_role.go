@@ -2,6 +2,7 @@ package node
 
 import (
 	"log"
+	"net"
 	"time"
 )
 
@@ -9,6 +10,7 @@ import (
 type Follower struct {
 	core *RaftCore
 
+	leader net.Addr
 	timer *time.Timer
 }
 

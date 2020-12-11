@@ -3,6 +3,7 @@ package main
 import (
 	"../internal/manager"
 	"../internal/node"
+	"../internal/router"
 )
 
 func main() {
@@ -10,19 +11,21 @@ func main() {
 
 	var candidate = node.NewCandidate(raftNode)
 
-
 	rm := &manager.RaftManager{
-		RaftIn: raftNode.Config.RaftOut,
-		RaftOut: raftNode.Config.RaftIn,
+		RaftIn:  raftNode.RaftOut,
+		RaftOut: raftNode.RaftIn,
 	}
 
 	cm := &manager.ClientManager{
-		ClientIn: raftNode.Config.ClientOut,
-		ClientOut: raftNode.Config.ClientIn,
+		ClientIn:  raftNode.ClientOut,
+		ClientOut: raftNode.ClientIn,
 	}
+
+	router := router.NewRouter()
 
 	go rm.ProcessMessage()
 	go cm.ProcessEntries()
+	go router.RunRouter()
 
 	node.RunRolePlayer(candidate)
 }

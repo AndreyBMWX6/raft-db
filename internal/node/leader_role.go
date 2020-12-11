@@ -59,37 +59,7 @@ func (l *Leader) PlayRole() RolePlayer {
 			}
 		default:
 			if msg := l.core.TryRecvClientMsg(); msg != nil {
-				switch rawClient := msg.(type) {
-				case *message.RawClientMessage:
-					rawClient.Entry.Term = l.core.Term
-					l.core.Entries = append(l.core.Entries, rawClient.Entry)
-					l.replicated++
-
-					log.Println("Leader added new entry")
-					log.Println("Leader log:     ", l.core.Entries)
-					var entriesTerms []uint32
-					for _,entry := range l.core.Entries {
-						entriesTerms = append(entriesTerms, entry.Term)
-					}
-					log.Println("Log terms:      ", entriesTerms)
-
-					var entries []*message.Entry
-					entries = append(entries, rawClient.Entry)
-					log.Println("Append entries: ", entries)
-					entriesTerms = nil
-					for _,entry := range entries {
-						entriesTerms = append(entriesTerms, entry.Term)
-					}
-					log.Println("Entries terms:  ", entriesTerms)
-
-					for _, update := range l.updates {
-						upd := make([]*message.Entry, 1)
-						upd[0] = rawClient.Entry
-						update <-upd
-					}
-				default:
-					log.Print("`RawClientMessage` expected, got another type")
-				}
+				l.ApplyClientMessage(msg)
 			}
 			if msg := l.core.TryRecvRaftMsg(); msg != nil {
 				if nextRole := l.ApplyRaftMessage(msg); nextRole != nil {
