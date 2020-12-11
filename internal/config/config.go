@@ -15,6 +15,7 @@ type Config struct {
 
 	Addr net.UDPAddr
 	Neighbors []net.UDPAddr
+	URL string
 
 	Term uint32
 	Entries []*message.Entry
@@ -25,17 +26,19 @@ type RouterConfig struct {
 }
 
 func NewConfig() *Config {
-	addr, err := net.ResolveUDPAddr("udp4", "127.0.0.1:800")
+	addr, err := net.ResolveUDPAddr("udp4", "127.0.0.1:8001")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	url := "http://localhost:8081"
+
 	neighbourStrings := []string{
-		"127.0.0.1:8001",
 		"127.0.0.1:8002",
 		"127.0.0.1:8003",
 		"127.0.0.1:8004",
 		"127.0.0.1:8005",
+		"127.0.0.1:8006",
 	}
 
 	var neighbors []net.UDPAddr
@@ -50,13 +53,14 @@ func NewConfig() *Config {
 
 
 	return &Config{
-		FollowerTimeout:  4000*time.Millisecond,
-		VotingTimeout:    time.Duration(rand.Intn(1000) + 1000)*time.Millisecond,
-		HeartbeatTimeout: 1000*time.Millisecond,
-		Addr: *addr,
-		Neighbors: neighbors,
-		Term:      0,
-		Entries:   nil,
+		FollowerTimeout  : 4000*time.Millisecond,
+		VotingTimeout    : time.Duration(rand.Intn(1000) + 1000)*time.Millisecond,
+		HeartbeatTimeout : 1000*time.Millisecond,
+		Addr             : *addr,
+		Neighbors        : neighbors,
+		URL              : url,
+		Term             : 0,
+		Entries          : nil,
 	}
 }
 

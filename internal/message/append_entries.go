@@ -16,17 +16,20 @@ type AppendEntries struct {
 	PrevTerm  uint32
 	NewIndex uint32
 	Entries  []*Entry
+	LeaderURL string
 }
 
 func NewAppendEntries(base *BaseRaftMessage,
                       prevTerm uint32,
                       newIdx uint32,
-                      entries []*Entry) *AppendEntries {
+                      entries []*Entry,
+                      leaderURL string) *AppendEntries {
 	return &AppendEntries{
 		BaseRaftMessage: *base,
 		PrevTerm:    prevTerm,
 		NewIndex:    newIdx,
 		Entries:     entries,
+		LeaderURL:   leaderURL,
 	}
 }
 
@@ -83,6 +86,8 @@ func (e *AppendEntries) Unmarshal(message *net_message.Message) RaftMessage {
 			}
 		}
 
+		leaderURL := raftMsg.AppendEntries.URL
+
 		return NewAppendEntries(
 			&BaseRaftMessage{
 				Owner:    ownerUdp,
@@ -92,6 +97,7 @@ func (e *AppendEntries) Unmarshal(message *net_message.Message) RaftMessage {
 			raftMsg.AppendEntries.PrevTerm,
 			raftMsg.AppendEntries.NewIndex,
 			entries,
+			leaderURL,
 		)
 
 	default:

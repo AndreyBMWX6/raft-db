@@ -37,6 +37,7 @@ type RaftCore struct {
 
 	Addr net.UDPAddr
 	Neighbors []net.UDPAddr
+	URL string
 
 	Term uint32
 	Entries []*message.Entry
@@ -65,16 +66,17 @@ func NewRaftCore() *RaftCore {
 	var clientOut = make(chan message.ClientMessage)
 
 	return &RaftCore{
-		Config:    cfg,
-		Addr:      cfg.Addr,
-		Neighbors: cfg.Neighbors,
-		Term:      cfg.Term,
-		Entries:   cfg.Entries,
-		Voted:     false,
-		RaftIn:    raftIn,
-		RaftOut:   raftOut,
-		ClientIn:  clientIn,
-		ClientOut: clientOut,
+		Config    : cfg,
+		Addr      : cfg.Addr,
+		Neighbors : cfg.Neighbors,
+		URL       : cfg.URL,
+		Term      : cfg.Term,
+		Entries   : cfg.Entries,
+		Voted     : false,
+		RaftIn    : raftIn,
+		RaftOut   : raftOut,
+		ClientIn  : clientIn,
+		ClientOut : clientOut,
 	}
 }
 

@@ -18,6 +18,7 @@ message AppendEntries {
   uint32 PrevTerm = 2;
   uint32 NewIndex = 3;
   repeated Entry Entries = 4;
+  string URL = 5;
 }
 
 message AppendAck {

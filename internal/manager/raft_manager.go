@@ -74,6 +74,7 @@ func (rm *RaftManager) ProcessMessage() {
 						PrevTerm: raftMsg.PrevTerm,
 						NewIndex: raftMsg.NewIndex,
 						Entries:  entries,
+						URL: raftMsg.LeaderURL,
 						},
 					},
 				}

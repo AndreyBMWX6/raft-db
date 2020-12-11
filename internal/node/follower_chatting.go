@@ -18,7 +18,9 @@ func (f *Follower) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 		case message.AppendEntriesType:
 			switch entries := msg.(type) {
 			case *message.AppendEntries:
-				f.leader = &entries.Owner
+				if entries.LeaderURL != "" {
+					f.leaderURL = entries.LeaderURL
+				}
 				f.ApplyAppendEntries(entries)
 			default:
 				log.Print("`AppendEntriesMessage` expected, got another type")
@@ -162,9 +164,7 @@ func (f *Follower) ApplyClientMessage(msg message.ClientMessage) {
 				true,
 			)
 
-			port := f.leader.String()[len(f.leader.String()) - 4:]
-			leaderURL := "http://localhost:" + port
-			response.LeaderURL = leaderURL
+			response.LeaderURL = f.leaderURL
 
 			go f.core.SendClientMsg(response)
 		}
