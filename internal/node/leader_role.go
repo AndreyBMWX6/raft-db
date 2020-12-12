@@ -21,7 +21,10 @@ type Leader struct {
 	updates map[string]chan[]*message.Entry
 
 	// needed to define, when more than half committed and send response yo client
-	replicated int
+	replicated []int
+	// needed to define, when all nodes replicated entry
+	//and replicated counter can be deleted from replicated []int
+	followerView []FollowerView
 }
 
 func BecomeLeader(player RolePlayer) *Leader {
@@ -31,7 +34,8 @@ func BecomeLeader(player RolePlayer) *Leader {
 		heartbeat: time.NewTicker(core.Config.HeartbeatTimeout),
 		ctx:       context.Background(),
 		updates:   make(map[string]chan []*message.Entry, len(core.Neighbors)),
-		replicated: 0,
+		replicated: make([]int, 0),
+		followerView: make([]FollowerView, len(core.Neighbors)),
 	}
 }
 

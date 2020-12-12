@@ -25,6 +25,7 @@ message AppendAck {
   BaseRaftMessage Msg = 1;
   bool Appended = 2;
   bool Heartbeat = 3;
+  uint32 TopIndex = 4;
 }
 
 message RequestVote {

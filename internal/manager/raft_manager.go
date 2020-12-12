@@ -123,6 +123,7 @@ func (rm *RaftManager) ProcessMessage() {
 							Msg:       baseRaftMsg,
 							Appended:  raftMsg.Appended,
 							Heartbeat: raftMsg.Heartbeat,
+							TopIndex:  raftMsg.TopIndex,
 						},
 					},
 				}

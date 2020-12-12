@@ -11,13 +11,16 @@ type AppendAck struct {
 	Appended bool
 	// field defining heartbeat or append
 	Heartbeat bool
+	// field defining index of added entry
+	TopIndex uint32
 }
 
-func NewAppendAck(base *BaseRaftMessage, appended bool, heartbeat bool) *AppendAck {
+func NewAppendAck(base *BaseRaftMessage, appended bool, heartbeat bool, topIndex uint32) *AppendAck {
 	return &AppendAck{
 		BaseRaftMessage: *base,
 		Appended:    	 appended,
 		Heartbeat: 		 heartbeat,
+		TopIndex:        topIndex,
 	}
 }
 
@@ -69,6 +72,7 @@ func (aa *AppendAck) Unmarshal(message *net_message.Message) RaftMessage {
 			},
 			raftMsg.AppendAck.Appended,
 			raftMsg.AppendAck.Heartbeat,
+			raftMsg.AppendAck.TopIndex,
 		)
 
 	default:

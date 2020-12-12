@@ -53,14 +53,14 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 					if ack.Heartbeat == true {
 						return nil
 					} else {
-						l.replicated++
+						l.replicated[ack.TopIndex]++
 
 						// a sign of committed changes
 						success := make([]*message.Entry, 1)
 						success[0] = nil
 						l.updates[ack.OwnerAddr().String()]<-success
 
-						if l.replicated > ((len(l.core.Neighbors) + 1) / 2) {
+						if l.replicated[ack.TopIndex] > ((len(l.core.Neighbors) + 1) / 2) {
 							response := message.NewResponseClientMessage(
 								&message.BaseClientMessage{
 									Owner: nil,
@@ -70,7 +70,6 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 							)
 
 							go l.core.SendClientMsg(response)
-							l.replicated = 0
 						}
 						return nil
 					}
@@ -97,7 +96,7 @@ func (l *Leader) ApplyClientMessage(msg message.ClientMessage) {
 	case *message.RawClientMessage:
 		rawClient.Entry.Term = l.core.Term
 		l.core.Entries = append(l.core.Entries, rawClient.Entry)
-		l.replicated++
+		l.replicated = append(l.replicated, 1)
 
 		log.Println("Leader added new entry")
 		log.Println("Leader log:     ", l.core.Entries)
