@@ -107,7 +107,7 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 					f.core.Entries = append(f.core.Entries, entries.Entries...)
 				}
 				ack.Appended = true
-				ack.TopIndex = uint32(len(f.core.Entries))
+				ack.TopIndex = uint32(len(f.core.Entries) - 1)
 				log.Println("New entry added successfully")
 			} else {
 				if entries.PrevTerm != prevTerm {
@@ -123,7 +123,7 @@ func (f *Follower) ApplyAppendEntries(entries *message.AppendEntries) {
 						f.core.Entries = append(f.core.Entries, entries.Entries...)
 					}
 					ack.Appended = true
-					ack.TopIndex = uint32(len(f.core.Entries))
+					ack.TopIndex = uint32(len(f.core.Entries) - 1)
 					log.Println("New entry added successfully")
 				}
 			}
