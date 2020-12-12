@@ -169,6 +169,8 @@ func (f *Follower) ApplyClientMessage(msg message.ClientMessage) {
 
 			response.LeaderURL = f.leaderURL
 
+			log.Println("Node:", f.core.Addr.String(), " redirected client message to leader" +
+				"(URL:", f.leaderURL, ")")
 			go f.core.SendClientMsg(response)
 		}
 	default:

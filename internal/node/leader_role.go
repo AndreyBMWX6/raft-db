@@ -9,22 +9,14 @@ import (
 	"../message"
 )
 
-type FollowerView struct {
-	LogIndex int
-	
-}
-
 type Leader struct {
 	core *RaftCore
 	ctx  context.Context
 	heartbeat *time.Ticker
 	updates map[string]chan[]*message.Entry
 
-	// needed to define, when more than half committed and send response yo client
+	// needed to define, when more than half committed and send response to client
 	replicated []int
-	// needed to define, when all nodes replicated entry
-	//and replicated counter can be deleted from replicated []int
-	followerView []FollowerView
 }
 
 func BecomeLeader(player RolePlayer) *Leader {
@@ -35,7 +27,6 @@ func BecomeLeader(player RolePlayer) *Leader {
 		ctx:       context.Background(),
 		updates:   make(map[string]chan []*message.Entry, len(core.Neighbors)),
 		replicated: make([]int, 0),
-		followerView: make([]FollowerView, len(core.Neighbors)),
 	}
 }
 

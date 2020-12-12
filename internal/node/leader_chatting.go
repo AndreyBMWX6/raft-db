@@ -69,7 +69,11 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 								false,
 							)
 
-							go l.core.SendClientMsg(response)
+							if l.replicated[ack.TopIndex] > ((len(l.core.Neighbors) + 1) / 2) + 1 {
+								return nil
+							} else {
+								go l.core.SendClientMsg(response)
+							}
 						}
 						return nil
 					}
