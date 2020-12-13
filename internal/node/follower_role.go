@@ -51,6 +51,9 @@ func (f *Follower) PlayRole() RolePlayer {
 					return nextRole
 				}
 			}
+			if msg := f.core.TryRecvDBMsg(); msg != nil {
+				f.ApplyDBMessage(msg)
+			}
 		}
 	}
 }

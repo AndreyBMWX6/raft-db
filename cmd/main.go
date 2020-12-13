@@ -21,10 +21,16 @@ func main() {
 		ClientOut: raftNode.ClientIn,
 	}
 
+	dbm := &manager.MongoDBManager{
+		DBIn:       raftNode.DBOut,
+		DBOut:      raftNode.DBIn,
+	}
+
 	router := router.NewRouter()
 
 	go rm.ProcessMessage()
 	go cm.ProcessEntries()
+	go dbm.ProcessMessage()
 	go router.RunRouter()
 
 	node.RunRolePlayer(candidate)

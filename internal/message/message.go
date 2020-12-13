@@ -3,6 +3,7 @@ package message
 import (
 	"net"
 	"../net_message"
+	"net/http"
 )
 
 // Raft Message Types
@@ -57,6 +58,10 @@ type ClientMessage interface {
 	Type() int
 }
 
+type DBMessage interface {
+	OwnerAddr() net.Addr
+}
+
 // Any inter-node message bases on it structure
 type BaseRaftMessage struct {
 	Owner net.UDPAddr
@@ -70,17 +75,29 @@ type BaseClientMessage struct {
 	ReqType int
 }
 
+type DBRequest struct {
+	Owner   net.Addr
+	Type    int
+	Request *http.Request
+}
+
+type DBResponse struct {
+	Owner    net.Addr
+	Result []byte
+	Status   int
+	Entry  *Entry
+}
+
 type RawClientMessage struct {
 	BaseClientMessage
-
-	Entry *Entry
+	DBReq *DBRequest
 }
 
 func NewRawClientMessage(base *BaseClientMessage,
-					  entry *Entry) *RawClientMessage {
+					     request *DBRequest) *RawClientMessage {
 	return &RawClientMessage{
 		BaseClientMessage: *base,
-		Entry:           entry,
+		DBReq:             request,
 	}
 }
 
@@ -99,14 +116,16 @@ func (rc *RawClientMessage) Type() int {
 
 type ResponseClientMessage struct {
 	BaseClientMessage
+	DBResponse *DBResponse
 	Redirect bool
 	LeaderURL string
 }
 
-func NewResponseClientMessage(base *BaseClientMessage, redirect bool) *ResponseClientMessage {
+func NewResponseClientMessage(base *BaseClientMessage, response *DBResponse, redirect bool, ) *ResponseClientMessage {
 	return &ResponseClientMessage{
 		BaseClientMessage: *base,
-		Redirect: redirect,
+		DBResponse:        response,
+		Redirect:          redirect,
 	}
 }
 
@@ -120,4 +139,12 @@ func (rc *ResponseClientMessage) DestAddr() net.Addr {
 
 func (rc *ResponseClientMessage) Type() int {
 	return ResponseClientAnswer
+}
+
+func (dbm *DBRequest) OwnerAddr() net.Addr {
+	return dbm.Owner
+}
+
+func (dbr *DBResponse) OwnerAddr() net.Addr {
+	return dbr.Owner
 }

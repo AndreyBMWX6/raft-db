@@ -51,6 +51,10 @@ type RaftCore struct {
 	// Client IO
 	ClientIn  chan message.ClientMessage
 	ClientOut chan message.ClientMessage
+
+	// DB IO
+	DBIn chan message.DBMessage
+	DBOut chan message.DBMessage
 }
 
 // may be change value initialization to address
@@ -65,6 +69,10 @@ func NewRaftCore() *RaftCore {
 	var clientIn  = make(chan message.ClientMessage)
 	var clientOut = make(chan message.ClientMessage)
 
+	// DB IO
+	var dbIn  = make(chan message.DBMessage)
+	var dbOut = make(chan message.DBMessage)
+
 	return &RaftCore{
 		Config    : cfg,
 		Addr      : cfg.Addr,
@@ -77,6 +85,8 @@ func NewRaftCore() *RaftCore {
 		RaftOut   : raftOut,
 		ClientIn  : clientIn,
 		ClientOut : clientOut,
+		DBIn      : dbIn,
+		DBOut     : dbOut,
 	}
 }
 
@@ -132,6 +142,17 @@ func (n *RaftCore) TryRecvClientMsg() message.ClientMessage {
 	}
 }
 
+func (n* RaftCore) TryRecvDBMsg() message.DBMessage {
+	for {
+		select {
+		case msg := <- n.DBIn:
+			return msg
+		default:
+			return nil
+		}
+	}
+}
+
 // Message senders wrapper
 // Here there are message sending logics
 func (n *RaftCore) SendRaftMsg(msg message.RaftMessage) {
@@ -140,6 +161,10 @@ func (n *RaftCore) SendRaftMsg(msg message.RaftMessage) {
 
 func (n *RaftCore) SendClientMsg(msg message.ClientMessage)  {
 	n.ClientOut <- msg
+}
+
+func (n *RaftCore) SendDBMsg(msg message.DBMessage)  {
+	n.DBOut <- msg
 }
 
 func (core *RaftCore) ProcessRequestVote(request *message.RequestVote) bool {

@@ -17,16 +17,19 @@ type Leader struct {
 
 	// needed to define, when more than half committed and send response to client
 	replicated []int
+	// needed to send DB response to client
+	responses []*message.DBResponse
 }
 
 func BecomeLeader(player RolePlayer) *Leader {
 	core := player.ReleaseNode()
 	return &Leader{
-		core:      core,
-		heartbeat: time.NewTicker(core.Config.HeartbeatTimeout),
-		ctx:       context.Background(),
-		updates:   make(map[string]chan []*message.Entry, len(core.Neighbors)),
+		core:       core,
+		heartbeat:  time.NewTicker(core.Config.HeartbeatTimeout),
+		ctx:        context.Background(),
+		updates:    make(map[string]chan []*message.Entry, len(core.Neighbors)),
 		replicated: make([]int, 0),
+		responses:  make([]*message.DBResponse, 0),
 	}
 }
 
@@ -60,6 +63,9 @@ func (l *Leader) PlayRole() RolePlayer {
 				if nextRole := l.ApplyRaftMessage(msg); nextRole != nil {
 					return nextRole
 				}
+			}
+			if msg := l.core.TryRecvDBMsg(); msg != nil {
+				l.ApplyDBMessage(msg)
 			}
 		}
 	}

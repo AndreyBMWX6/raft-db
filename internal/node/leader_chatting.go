@@ -66,6 +66,7 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 									Owner: nil,
 									Dest:  nil,
 								},
+								l.responses[ack.TopIndex],
 								false,
 							)
 
@@ -98,32 +99,55 @@ func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {
 func (l *Leader) ApplyClientMessage(msg message.ClientMessage) {
 	switch rawClient := msg.(type) {
 	case *message.RawClientMessage:
-		rawClient.Entry.Term = l.core.Term
-		l.core.Entries = append(l.core.Entries, rawClient.Entry)
-		l.replicated = append(l.replicated, 1)
+		l.core.SendDBMsg(rawClient.DBReq)
+	default:
+		log.Print("`RawClientMessage` expected, got another type")
+	}
+}
 
-		log.Println("Leader added new entry")
-		log.Println("Leader log:     ", l.core.Entries)
-		var entriesTerms []uint32
-		for _,entry := range l.core.Entries {
-			entriesTerms = append(entriesTerms, entry.Term)
-		}
-		log.Println("Log terms:      ", entriesTerms)
+func (l *Leader) ApplyDBMessage(msg message.DBMessage) {
+	switch dbResp := msg.(type) {
+	case *message.DBResponse:
+		if dbResp.Entry != nil {
+			dbResp.Entry.Term = l.core.Term
+			l.core.Entries = append(l.core.Entries, dbResp.Entry)
+			l.replicated = append(l.replicated, 1)
+			l.responses = append(l.responses, dbResp)
 
-		var entries []*message.Entry
-		entries = append(entries, rawClient.Entry)
-		log.Println("Append entries: ", entries)
-		entriesTerms = nil
-		for _,entry := range entries {
-			entriesTerms = append(entriesTerms, entry.Term)
-		}
-		log.Println("Entries terms:  ", entriesTerms)
+			log.Println("Leader added new entry")
+			log.Println("Leader log:     ", l.core.Entries)
+			var entriesTerms []uint32
+			for _,entry := range l.core.Entries {
+				entriesTerms = append(entriesTerms, entry.Term)
+			}
+			log.Println("Log terms:      ", entriesTerms)
 
-		for _, update := range l.updates {
-			upd := make([]*message.Entry, 1)
-			upd[0] = rawClient.Entry
-			update <-upd
+			var entries []*message.Entry
+			entries = append(entries, dbResp.Entry)
+			log.Println("Append entries: ", entries)
+			entriesTerms = nil
+			for _,entry := range entries {
+				entriesTerms = append(entriesTerms, entry.Term)
+			}
+			log.Println("Entries terms:  ", entriesTerms)
+
+			for _, update := range l.updates {
+				upd := make([]*message.Entry, 1)
+				upd[0] = dbResp.Entry
+				update <-upd
+			}
+		} else {
+			response := message.NewResponseClientMessage(
+				&message.BaseClientMessage{
+					Owner: nil,
+					Dest:  nil,
+				},
+				dbResp,
+				false,
+			)
+			go l.core.SendClientMsg(response)
 		}
+
 	default:
 		log.Print("`RawClientMessage` expected, got another type")
 	}

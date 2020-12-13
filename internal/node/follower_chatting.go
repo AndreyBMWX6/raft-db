@@ -149,21 +149,14 @@ func (f *Follower) ApplyClientMessage(msg message.ClientMessage) {
 	switch clientMsg := msg.(type) {
 	case *message.RawClientMessage:
 		if clientMsg.ReqType == message.GetRequestType {
-			response := message.NewResponseClientMessage(
-				&message.BaseClientMessage{
-					Owner: nil,
-					Dest:  nil,
-				},
-				false,
-			)
-
-			go f.core.SendClientMsg(response)
+			go f.core.SendDBMsg(clientMsg.DBReq)
 		} else {
 			response := message.NewResponseClientMessage(
 				&message.BaseClientMessage{
 					Owner: nil,
 					Dest:  nil,
 				},
+				nil,
 				true,
 			)
 
@@ -173,6 +166,23 @@ func (f *Follower) ApplyClientMessage(msg message.ClientMessage) {
 				"(URL:", f.leaderURL, ")")
 			go f.core.SendClientMsg(response)
 		}
+	default:
+		log.Print("`RawClientMessage` expected, got another type")
+	}
+}
+
+func (f *Follower) ApplyDBMessage(msg message.DBMessage) {
+	switch dbResp := msg.(type) {
+	case *message.DBResponse:
+		response := message.NewResponseClientMessage(
+			&message.BaseClientMessage{
+				Owner: nil,
+				Dest:  nil,
+			},
+			dbResp,
+			false,
+		)
+		go f.core.SendClientMsg(response)
 	default:
 		log.Print("`RawClientMessage` expected, got another type")
 	}
