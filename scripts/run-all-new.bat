@@ -11,9 +11,11 @@ echo firstIpPort=%firstIpPort%
 echo lastIpPort=%lastIpPort%
 echo firstUrlPort=%firstUrlPort%
 echo lastUrlPort=%lastUrlPort%
-for /l %%i in (1, 1, %usercnt%) do start run-new.bat -all %ip% %firstIpPort% %firstUrlPort% user%%i;
+set /a runRouter="true"
+for /l %%i in (1, 1, %usercnt%) do start run-new.bat -all %ip% %firstIpPort% %firstUrlPort% %runRouter% user%%i;
 echo %firstIpPort%
 echo %firstUrlPort%
 set /a firstIpPort = firstIpPort + 1
 set /a firstUrlPort = firstUrlPort + 1
+set /a runRouter="false"
 pause
