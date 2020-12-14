@@ -35,7 +35,10 @@ func main() {
 		if urlPort == "" {
 			log.Println("Error: no URL port")
 		}
-
+		username := flag.Arg(3)
+		if urlPort == "" {
+			log.Println("Error: no username")
+		}
 		// all run
 		var raftNode = node.NewAllRunRaftCore(ip, ipPort, urlPort)
 
@@ -44,16 +47,19 @@ func main() {
 		rm := &manager.RaftManager{
 			RaftIn:  raftNode.RaftOut,
 			RaftOut: raftNode.RaftIn,
+			Addr:    raftNode.Addr,
 		}
 
 		cm := &manager.ClientManager{
 			ClientIn:  raftNode.ClientOut,
 			ClientOut: raftNode.ClientIn,
+			Port: urlPort,
 		}
 
 		dbm := &manager.MongoDBManager{
 			DBIn:       raftNode.DBOut,
 			DBOut:      raftNode.DBIn,
+			Username:   username,
 		}
 
 		r := router.NewRouterRunAll()

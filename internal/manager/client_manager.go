@@ -13,6 +13,7 @@ type ClientManager struct {
 	// Raft IO
 	ClientIn  <-chan message.ClientMessage
 	ClientOut chan<- message.ClientMessage
+	Port string
 }
 
 // handlers for different types of messages
@@ -148,7 +149,7 @@ func (cm* ClientManager) ProcessEntries() {
 	r.Methods("PUT")   .Path("/{Id}").HandlerFunc(cm.Put)
 	r.Methods("DELETE").Path("/{Id}").HandlerFunc(cm.Delete)
 
-	if err := http.ListenAndServe(":8081", r); err != nil {
+	if err := http.ListenAndServe(":" + cm.Port, r); err != nil {
 		log.Fatal(err)
 	}
 }

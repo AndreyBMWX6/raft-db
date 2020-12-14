@@ -10,7 +10,6 @@ import (
 	"log"
 	"net"
 
-	"../config"
 	"../message"
 	"../net_message"
 )
@@ -19,11 +18,13 @@ type RaftManager struct {
 	// Raft IO
 	RaftIn  <-chan message.RaftMessage
 	RaftOut chan<- message.RaftMessage
+	Addr net.UDPAddr
 }
 
 func (rm *RaftManager) ProcessMessage() {
 	// Resolving address
-	myAddr := config.NewConfig().Addr
+	//myAddr := config.NewConfig().Addr
+	myAddr := rm.Addr
 
 	// Build listening connections
 	conn, err := net.ListenUDP("udp", &myAddr)

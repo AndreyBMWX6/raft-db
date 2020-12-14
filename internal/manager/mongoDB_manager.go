@@ -18,6 +18,8 @@ type MongoDBManager struct {
 	DBIn  <-chan message.DBMessage
 	DBOut chan<- message.DBMessage
 
+	Username string
+
 	DataBase *mongo.Database
 	Collection *mongo.Collection
 }
@@ -347,8 +349,9 @@ func (dbm *MongoDBManager) ApplyDBMsg(msg message.DBMessage) {
 func (dbm *MongoDBManager) ProcessMessage() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+	uri := "mongodb+srv://"+dbm.Username+":rAft-db)@cluster0.fpnaa.mongodb.net/transport?retryWrites=true&w=majority"
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(
-		"mongodb+srv://AndreyBMWX6:rAft-db)@cluster0.fpnaa.mongodb.net/transport?retryWrites=true&w=majority",
+		uri,
 	))
 	if err != nil { log.Fatal(err) }
 

@@ -34,6 +34,7 @@ func RunRolePlayer(player RolePlayer) {
 // Any RolePlayer implementation should contains *RaftCore
 type RaftCore struct {
 	Config *config.Config
+	AllConfig *config.AllConfig
 
 	Addr net.UDPAddr
 	Neighbors []net.UDPAddr
@@ -91,7 +92,6 @@ func NewRaftCore() *RaftCore {
 }
 
 func NewAllRunRaftCore(ip string, ipPort string, urlPort string) *RaftCore {
-	cfg := config.NewConfig()
 	allCfg := config.NewAllConfig()
 
 	strAddr := ip + ":" + ipPort
@@ -127,7 +127,7 @@ func NewAllRunRaftCore(ip string, ipPort string, urlPort string) *RaftCore {
 	var dbOut = make(chan message.DBMessage)
 
 	return &RaftCore{
-		Config    : cfg,
+		AllConfig    : allCfg,
 		Addr      : *addr,
 		Neighbors : neighbors,
 		URL       : url,
