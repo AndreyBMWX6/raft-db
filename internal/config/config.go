@@ -16,6 +16,7 @@ type Config struct {
 	Addr net.UDPAddr
 	Neighbors []net.UDPAddr
 	URL string
+	Username string
 
 	Term uint32
 	Entries []*message.Entry
@@ -32,6 +33,8 @@ func NewConfig() *Config {
 	}
 
 	url := "http://localhost:8081"
+
+	username := "user" + url[len(url) - 1:]
 
 	neighbourStrings := []string{
 		"127.0.0.1:8002",
@@ -59,6 +62,7 @@ func NewConfig() *Config {
 		Addr             : *addr,
 		Neighbors        : neighbors,
 		URL              : url,
+		Username         : username,
 		Term             : 0,
 		Entries          : nil,
 	}

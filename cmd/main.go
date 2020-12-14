@@ -57,7 +57,7 @@ func main() {
 		cm := &manager.ClientManager{
 			ClientIn:  raftNode.ClientOut,
 			ClientOut: raftNode.ClientIn,
-			Port: urlPort,
+			UrlPort:   urlPort,
 		}
 
 		dbm := &manager.MongoDBManager{
@@ -83,18 +83,21 @@ func main() {
 		var candidate = node.NewCandidate(raftNode)
 
 		rm := &manager.RaftManager{
-			RaftIn:  raftNode.RaftOut,
-			RaftOut: raftNode.RaftIn,
+			RaftIn  : raftNode.RaftOut,
+			RaftOut : raftNode.RaftIn,
+			Addr    : raftNode.Config.Addr,
 		}
 
 		cm := &manager.ClientManager{
-			ClientIn:  raftNode.ClientOut,
-			ClientOut: raftNode.ClientIn,
+			ClientIn  : raftNode.ClientOut,
+			ClientOut : raftNode.ClientIn,
+			UrlPort   : raftNode.URL[len(raftNode.URL) - 4:],
 		}
 
 		dbm := &manager.MongoDBManager{
-			DBIn:       raftNode.DBOut,
-			DBOut:      raftNode.DBIn,
+			DBIn     : raftNode.DBOut,
+			DBOut    : raftNode.DBIn,
+			Username : raftNode.Config.Username,
 		}
 
 		r := router.NewRouter()
