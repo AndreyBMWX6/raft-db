@@ -1,21 +1,50 @@
 @echo off
+
 set ip=%~1
-set /a firstIpPort=%~2
-set /a lastIpPort=%~3
-set /a firstUrlPort=%~4
-set /a lastUrlPort=%~5
-set /a usercnt=(lastIpPort - firstIpPort) + 1
-echo usercnt=%usercnt%
+set firstIpPort=%~2
+set lastIpPort=%~3
+set firstUrlPort=%~4
+set lastUrlPort=%~5
+set /a usercnt=(%lastIpPort% - %firstIpPort%) + 1
+set /a usernum=1
+set "router=true"
+set "norouter=false"
+
+echo running %usercnt% servers on ip:%ip%
 echo ip=%ip%
 echo firstIpPort=%firstIpPort%
 echo lastIpPort=%lastIpPort%
 echo firstUrlPort=%firstUrlPort%
 echo lastUrlPort=%lastUrlPort%
-set /a runRouter="true"
-for /l %%i in (1, 1, %usercnt%) do start run-new.bat -all %ip% %firstIpPort% %firstUrlPort% %runRouter% user%%i;
-echo %firstIpPort%
-echo %firstUrlPort%
-set /a firstIpPort = firstIpPort + 1
-set /a firstUrlPort = firstUrlPort + 1
-set /a runRouter="false"
-pause
+
+for /l %%i in (1, 1, %usercnt%) do (
+  if "%%i" == "1" (
+  call :runtrue
+ )
+
+ if not "%%i" == "1" (
+  call :runfalse
+ )
+call :inc
+)
+goto :eof
+
+:inc
+rem echo fisrtIpPort=%firstIpPort%
+set /a firstIpPort=firstIpPort + 1
+rem echo firstIpPort=%firstIpPort%
+rem echo firstURLPort=%firstURLPort%
+set /a firstURLPort=firstURLPort + 1
+rem echo firstURLPort=%firstURLPort%
+rem echo usernum=%usernum%
+set /a usernum=usernum + 1
+rem echo usernum=%usernum%
+goto :eof
+
+:runtrue
+start go run ../../raft-db/cmd/main.go -all %ip% %firstIpPort% %firstUrlPort% %router% user%usernum%
+goto :eof
+
+:runfalse
+start go run ../../raft-db/cmd/main.go -all %ip% %firstIpPort% %firstUrlPort% %norouter% user%usernum%
+goto :eof
