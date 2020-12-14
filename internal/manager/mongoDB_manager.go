@@ -270,6 +270,13 @@ func(dbm *MongoDBManager) Update(r message.DBRequest) message.DBMessage {
 			response.Result = []byte(
 				`{ "result" : "Car updated" }`,
 			)
+			bytes, _ := ioutil.ReadAll(r.Request.Body)
+			query := []byte("Update" + strconv.Itoa(id) + "\n")
+			query = append(query, bytes...)
+			response.Entry = &message.Entry{
+				Term:  0,
+				Query: query,
+			}
 			return &response
 		}
 	}
@@ -321,6 +328,11 @@ func(dbm *MongoDBManager) Delete(r message.DBRequest) message.DBMessage {
 		response.Result = []byte(
 			`{ "result" : "Car deleted" }`,
 		)
+		query := []byte("Delete" + strconv.Itoa(id) + "\n")
+		response.Entry = &message.Entry{
+			Term:  0,
+			Query: query,
+		}
 		return &response
 	}
 

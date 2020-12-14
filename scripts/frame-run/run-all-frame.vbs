@@ -1,5 +1,5 @@
 With CreateObject("WScript.Shell") 
-  .CurrentDirectory="..\..\raft-db"
+  .CurrentDirectory="..\..\..\raft-db"
   .Exec("goland64 .")
   wsh.Sleep 20000 : .SendKeys "+{F10}"
 End With
