@@ -35,7 +35,11 @@ func main() {
 		if urlPort == "" {
 			log.Println("Error: no URL port")
 		}
-		username := flag.Arg(3)
+		runRouter := flag.Arg(3)
+		if runRouter == "" {
+			log.Println("Error: no router info")
+		}
+		username := flag.Arg(4)
 		if urlPort == "" {
 			log.Println("Error: no username")
 		}
@@ -62,12 +66,14 @@ func main() {
 			Username:   username,
 		}
 
-		r := router.NewRouterRunAll()
+		if runRouter == "true" {
+			r := router.NewRouterRunAll()
+			go r.RunRouter()
+		}
 
 		go rm.ProcessMessage()
 		go cm.ProcessEntries()
 		go dbm.ProcessMessage()
-		go r.RunRouter()
 
 		node.RunRolePlayer(candidate)
 	} else {
