@@ -4,34 +4,94 @@ import (
 	"../internal/manager"
 	"../internal/node"
 	"../internal/router"
+	"flag"
+	"log"
 )
 
 func main() {
-	var raftNode = node.NewRaftCore()
+	runAll := flag.Bool("all", false, "run multiple servers using common config")
+	flag.Parse()
 
-	var candidate = node.NewCandidate(raftNode)
+	if *runAll == true {
+		/*
+		execPath := flag.Arg(0)
+		if execPath == "" {
+			log.Println("Error: no exec path")
+		}
+		configPath := flag.Arg(1)
+		if configPath == "" {
+			log.Println("Error: no config path")
+		}
+		 */
+		ip := flag.Arg(0)
+		if ip == "" {
+			log.Println("Error: no ip")
+		}
+		ipPort := flag.Arg(1)
+		if ipPort == "" {
+			log.Println("Error: no port")
+		}
+		urlPort := flag.Arg(2)
+		if urlPort == "" {
+			log.Println("Error: no URL port")
+		}
 
-	rm := &manager.RaftManager{
-		RaftIn:  raftNode.RaftOut,
-		RaftOut: raftNode.RaftIn,
+		// all run
+		var raftNode = node.NewAllRunRaftCore(ip, ipPort, urlPort)
+
+		var candidate = node.NewCandidate(raftNode)
+
+		rm := &manager.RaftManager{
+			RaftIn:  raftNode.RaftOut,
+			RaftOut: raftNode.RaftIn,
+		}
+
+		cm := &manager.ClientManager{
+			ClientIn:  raftNode.ClientOut,
+			ClientOut: raftNode.ClientIn,
+		}
+
+		dbm := &manager.MongoDBManager{
+			DBIn:       raftNode.DBOut,
+			DBOut:      raftNode.DBIn,
+		}
+
+		r := router.NewRouterRunAll()
+
+		go rm.ProcessMessage()
+		go cm.ProcessEntries()
+		go dbm.ProcessMessage()
+		go r.RunRouter()
+
+		node.RunRolePlayer(candidate)
+	} else {
+		// simple run
+		var raftNode = node.NewRaftCore()
+
+		var candidate = node.NewCandidate(raftNode)
+
+		rm := &manager.RaftManager{
+			RaftIn:  raftNode.RaftOut,
+			RaftOut: raftNode.RaftIn,
+		}
+
+		cm := &manager.ClientManager{
+			ClientIn:  raftNode.ClientOut,
+			ClientOut: raftNode.ClientIn,
+		}
+
+		dbm := &manager.MongoDBManager{
+			DBIn:       raftNode.DBOut,
+			DBOut:      raftNode.DBIn,
+		}
+
+		r := router.NewRouter()
+
+		go rm.ProcessMessage()
+		go cm.ProcessEntries()
+		go dbm.ProcessMessage()
+		go r.RunRouter()
+
+		node.RunRolePlayer(candidate)
 	}
-
-	cm := &manager.ClientManager{
-		ClientIn:  raftNode.ClientOut,
-		ClientOut: raftNode.ClientIn,
-	}
-
-	dbm := &manager.MongoDBManager{
-		DBIn:       raftNode.DBOut,
-		DBOut:      raftNode.DBIn,
-	}
-
-	router := router.NewRouter()
-
-	go rm.ProcessMessage()
-	go cm.ProcessEntries()
-	go dbm.ProcessMessage()
-	go router.RunRouter()
-
-	node.RunRolePlayer(candidate)
 }

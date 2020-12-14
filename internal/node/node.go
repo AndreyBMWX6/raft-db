@@ -90,6 +90,60 @@ func NewRaftCore() *RaftCore {
 	}
 }
 
+func NewAllRunRaftCore(ip string, ipPort string, urlPort string) *RaftCore {
+	cfg := config.NewConfig()
+	allCfg := config.NewAllConfig()
+
+	strAddr := ip + ":" + ipPort
+	addr, err := net.ResolveUDPAddr("udp4", strAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var servId int
+	for id, serv := range allCfg.Servers {
+		if addr.String() == serv.String() {
+			servId = id
+		}
+	}
+
+	neighbors := allCfg.Servers[:servId]
+	if servId != len(allCfg.Servers) - 1 {
+		neighbors = append(neighbors, allCfg.Servers[servId + 1:]...)
+	}
+
+	url := "http://localhost:" + urlPort
+
+	// Raft IO
+	var raftIn  = make(chan message.RaftMessage)
+	var raftOut = make(chan message.RaftMessage)
+
+	// Client IO
+	var clientIn  = make(chan message.ClientMessage)
+	var clientOut = make(chan message.ClientMessage)
+
+	// DB IO
+	var dbIn  = make(chan message.DBMessage)
+	var dbOut = make(chan message.DBMessage)
+
+	return &RaftCore{
+		Config    : cfg,
+		Addr      : *addr,
+		Neighbors : neighbors,
+		URL       : url,
+		Term      : allCfg.Terms[servId],
+		Entries   : allCfg.Entries[servId],
+		Voted     : false,
+		RaftIn    : raftIn,
+		RaftOut   : raftOut,
+		ClientIn  : clientIn,
+		ClientOut : clientOut,
+		DBIn      : dbIn,
+		DBOut     : dbOut,
+	}
+}
+
+
 // Message receivers wrappers
 // Here there are message receiving logics
 func (n *RaftCore) TryRecvRaftMsg() message.RaftMessage {
