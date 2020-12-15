@@ -42,11 +42,9 @@ rem echo usernum=%usernum%
 goto :eof
 
 :runtrue
-rem start go run ../../raft-db/cmd/main.go -all %ip% %firstIpPort% %firstUrlPort% %router% user%usernum%
 start run.bat %ip% %firstIpPort% %firstUrlPort% %router% user%usernum%
 goto :eof
 
 :runfalse
-rem start go run ../../raft-db/cmd/main.go -all %ip% %firstIpPort% %firstUrlPort% %norouter% user%usernum%
 start run.bat %ip% %firstIpPort% %firstUrlPort% %norouter% user%usernum%
 goto :eof
