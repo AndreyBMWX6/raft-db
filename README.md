@@ -98,6 +98,14 @@ start run.bat 127.0.0.1 8004 8084 true user4
 // Почему: мы уже запустили роутер в run-all.bat
 ```
 
+### Как остановить кластер:
+Для остановки работы серверов перейдите в папку `raft-db/scripts`  
+и запустите скрипт `run-all.bat`:
+```
+cd <path to raft-db>/scripts
+kill-all.bat
+```  
+
 ## Instructions
 #### Note:
 For correct importing Go modules integration should be disabled in your IDE.
@@ -113,7 +121,7 @@ import (
  
 
 ## How to run cluster:
-Go to internal/config folder and set used ports range in `config.go` file.  
+Go to `internal/config` folder and set used ports range in `config.go` file.  
 Example:  
 ```
 // *SET PORTS RANGES HERE*
@@ -195,3 +203,11 @@ run-all.bat 127.0.0.1 8001 8003 8081 8083
 start run.bat 127.0.0.1 8004 8084 true user4 
 // Why: we have already runned router in run-all.bat
 ```
+
+### How to stop cluster:
+Go to `raft-db/scripts` folder and run `run-all.bat`:
+```
+cd <path to raft-db>/scripts
+kill-all.bat
+```  
+
