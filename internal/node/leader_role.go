@@ -76,8 +76,6 @@ func NewReplicator(ctx context.Context,
 				   follower net.UDPAddr,
 				   update <-chan []*message.Entry) func() {
 	return func() {
-		var sentURL = false
-		var leaderURL string
 		// helps switching between sending heartbeat and new entries
 		var heartbeat = false
 
@@ -141,13 +139,6 @@ func NewReplicator(ctx context.Context,
 					}
 				}
 
-				if sentURL == false {
-					leaderURL = l.core.URL
-					sentURL = true
-				} else {
-					leaderURL = ""
-				}
-
 				msg := message.NewAppendEntries(
 					&message.BaseRaftMessage{
 						Owner:    l.core.Addr,
@@ -157,9 +148,9 @@ func NewReplicator(ctx context.Context,
 					prevTerm,
 					newIndex,
 					entries,
-					leaderURL,
+					l.core.URL,
 				)
-				
+
 				// make loop sending appendEntries until got response
 				if heartbeat == true {
 				//	msg.Entries = nil
