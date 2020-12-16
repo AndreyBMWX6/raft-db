@@ -83,14 +83,24 @@ func (c *Candidate) PlayRole() RolePlayer {
 			return BecomeCandidate(c)
 
 		default:
-			//if msg := c.core.TryRecvClientMsg(); msg != nil {
-				//с.ApplyClientMessage(msg)
-			//}
+			/*
+			if msg := c.core.TryRecvClientMsg(); msg != nil {
+				с.ApplyClientMessage(msg)
+			}
+			*/
 			if  msg := c.core.TryRecvRaftMsg(); msg != nil {
 				if nextRole := c.ApplyRaftMessage(msg); nextRole != nil {
 					return nextRole
 				}
 			}
+			/*
+			// code for delay
+				m := make(map[int]int)
+				for i := 0; i < 10000; i++ {
+					m[i] = i
+				}
+			 */
+
 		}
 	}
 }

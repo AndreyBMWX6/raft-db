@@ -167,7 +167,6 @@ func (rm *RaftManager) ProcessMessage() {
 			default:
 				log.Print("unexpected type of message")
 			}
-		default:
 		}
 	}
 }

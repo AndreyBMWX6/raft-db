@@ -189,7 +189,6 @@ func NewReplicator(ctx context.Context,
 
 
 				l.core.SendRaftMsg(message.RaftMessage(msg))
-			default:
 			}
 		}
 	}

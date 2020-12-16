@@ -382,7 +382,6 @@ func (dbm *MongoDBManager) ProcessMessage() {
 		select {
 		case msg := <-dbm.DBIn:
 			dbm.ApplyDBMsg(msg)
-		default:
 		}
 	}
 }

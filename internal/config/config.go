@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"time"
+	"strconv"
 	"math/rand"
 	"../message"
 )
@@ -13,13 +14,14 @@ type Config struct {
 	VotingTimeout    time.Duration
 	HeartbeatTimeout time.Duration
 
-	Addr net.UDPAddr
-	Neighbors []net.UDPAddr
-	URL string
-	Username string
+	Servers   []net.UDPAddr
+	URLs      []string
+	Usernames []string
 
-	Term uint32
-	Entries []*message.Entry
+	// default [0, 0, 0,...]
+	Terms []uint32
+	// default [[],[],[],...]
+	Entries [][]*message.Entry
 }
 
 type RouterConfig struct {
@@ -27,58 +29,78 @@ type RouterConfig struct {
 }
 
 func NewConfig() *Config {
-	addr, err := net.ResolveUDPAddr("udp4", "127.0.0.1:8001")
+	// *SET PORTS RANGES HERE*
+
+	// ip ports range
+	firstIPPort := "8001"
+	lastIPPort  := "8006"
+
+	// URL ports range
+	firstURLPort := "8081"
+	lastURLPort := "8086"
+
+	fIPPort, err := strconv.Atoi(firstIPPort)
+	if err != nil {
+		log.Fatal(err)
+	}
+	lIPPort, err := strconv.Atoi(lastIPPort)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	url := "http://localhost:8081"
-
-	username := "user" + url[len(url) - 1:]
-
-	neighbourStrings := []string{
-		"127.0.0.1:8002",
-		"127.0.0.1:8003",
-		"127.0.0.1:8004",
-		"127.0.0.1:8005",
-		"127.0.0.1:8006",
+	fURLPort, err := strconv.Atoi(firstURLPort)
+	if err != nil {
+		log.Fatal(err)
+	}
+	lURLPort, err := strconv.Atoi(lastURLPort)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	var neighbors []net.UDPAddr
-	for _, neighbour := range neighbourStrings {
-		nborAddr, err := net.ResolveUDPAddr("udp4", neighbour)
+	var serversStr []string
+	serversStr = append(serversStr, ("127.0.0.1:" + firstIPPort))
+
+	var urls []string
+	urls = append(urls, ("http://localhost:" + firstURLPort))
+
+	for fIPPort != lIPPort && fURLPort != lURLPort {
+		fIPPort++
+		fURLPort++
+		serversStr = append(serversStr, "127.0.0.1:" + strconv.Itoa(fIPPort))
+		urls = append(urls, "http://localhost:" + strconv.Itoa(fURLPort))
+	}
+
+	var servers []net.UDPAddr
+	for _, server := range serversStr {
+		addr, err := net.ResolveUDPAddr("udp4", server)
 		if err != nil {
 			log.Fatal(err)
 		}
-		neighbors = append(neighbors, *nborAddr)
+		servers = append(servers, *addr)
 	}
 
-
+	var usernames []string
+	userCnt := lIPPort - fIPPort
+	for i := 1; i <= userCnt; i++ {
+		usernames = append(usernames, "user" + strconv.Itoa(i))
+	}
 
 	return &Config{
 		FollowerTimeout  : 4000*time.Millisecond,
 		VotingTimeout    : time.Duration(rand.Intn(1000) + 1000)*time.Millisecond,
 		HeartbeatTimeout : 1000*time.Millisecond,
-		Addr             : *addr,
-		Neighbors        : neighbors,
-		URL              : url,
-		Username         : username,
-		Term             : 0,
-		Entries          : nil,
+		Servers          : servers,
+		URLs			 : urls,
+		Usernames        : usernames,
+		Terms            : make([]uint32, len(servers)),
+		Entries          : make([][]*message.Entry, len(servers)),
 	}
 }
 
 func NewRouterConfig() *RouterConfig {
-	urls := []string{
-		"http://localhost:8081",
-		"http://localhost:8082",
-		"http://localhost:8083",
-		"http://localhost:8084",
-		"http://localhost:8085",
-		"http://localhost:8086",
-	}
+	cfg := NewConfig()
 
 	return &RouterConfig{
-		URLs:  urls,
+		URLs:  cfg.URLs,
 	}
 }

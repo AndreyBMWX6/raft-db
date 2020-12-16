@@ -34,7 +34,6 @@ func RunRolePlayer(player RolePlayer) {
 // Any RolePlayer implementation should contains *RaftCore
 type RaftCore struct {
 	Config *config.Config
-	AllConfig *config.AllConfig
 
 	Addr net.UDPAddr
 	Neighbors []net.UDPAddr
@@ -59,41 +58,8 @@ type RaftCore struct {
 }
 
 // may be change value initialization to address
-func NewRaftCore() *RaftCore {
+func NewRaftCore(ip string, ipPort string, urlPort string) *RaftCore {
 	cfg := config.NewConfig()
-
-	// Raft IO
-	var raftIn  = make(chan message.RaftMessage)
-	var raftOut = make(chan message.RaftMessage)
-
-	// Client IO
-	var clientIn  = make(chan message.ClientMessage)
-	var clientOut = make(chan message.ClientMessage)
-
-	// DB IO
-	var dbIn  = make(chan message.DBMessage)
-	var dbOut = make(chan message.DBMessage)
-
-	return &RaftCore{
-		Config    : cfg,
-		Addr      : cfg.Addr,
-		Neighbors : cfg.Neighbors,
-		URL       : cfg.URL,
-		Term      : cfg.Term,
-		Entries   : cfg.Entries,
-		Voted     : false,
-		RaftIn    : raftIn,
-		RaftOut   : raftOut,
-		ClientIn  : clientIn,
-		ClientOut : clientOut,
-		DBIn      : dbIn,
-		DBOut     : dbOut,
-	}
-}
-
-func NewAllRunRaftCore(ip string, ipPort string, urlPort string) *RaftCore {
-	cfg := config.NewConfig()
-	allCfg := config.NewAllConfig()
 
 	strAddr := ip + ":" + ipPort
 	addr, err := net.ResolveUDPAddr("udp4", strAddr)
@@ -102,15 +68,15 @@ func NewAllRunRaftCore(ip string, ipPort string, urlPort string) *RaftCore {
 	}
 
 	var servId int
-	for id, serv := range allCfg.Servers {
+	for id, serv := range cfg.Servers {
 		if addr.String() == serv.String() {
 			servId = id
 		}
 	}
 
-	neighbors := allCfg.Servers[:servId]
-	if servId != len(allCfg.Servers) - 1 {
-		neighbors = append(neighbors, allCfg.Servers[servId + 1:]...)
+	neighbors := cfg.Servers[:servId]
+	if servId != len(cfg.Servers) - 1 {
+		neighbors = append(neighbors, cfg.Servers[servId + 1:]...)
 	}
 
 	url := "http://localhost:" + urlPort
@@ -129,12 +95,11 @@ func NewAllRunRaftCore(ip string, ipPort string, urlPort string) *RaftCore {
 
 	return &RaftCore{
 		Config    : cfg,
-		AllConfig : allCfg,
 		Addr      : *addr,
 		Neighbors : neighbors,
 		URL       : url,
-		Term      : allCfg.Terms[servId],
-		Entries   : allCfg.Entries[servId],
+		Term      : cfg.Terms[servId],
+		Entries   : cfg.Entries[servId],
 		Voted     : false,
 		RaftIn    : raftIn,
 		RaftOut   : raftOut,
@@ -144,7 +109,6 @@ func NewAllRunRaftCore(ip string, ipPort string, urlPort string) *RaftCore {
 		DBOut     : dbOut,
 	}
 }
-
 
 // Message receivers wrappers
 // Here there are message receiving logics

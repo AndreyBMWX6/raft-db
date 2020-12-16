@@ -21,14 +21,6 @@ func NewRouter() *Router {
 	}
 }
 
-func NewRouterRunAll() *Router {
-	cfg := config.NewRouterRunAllConfig()
-	return &Router{
-		URLs   :   cfg.URLs,
-		CurrId :   0,
-	}
-}
-
 func (router *Router) GetURL() *string {
 	currId := router.CurrId
 	router.CurrId = (router.CurrId + 1) % len(router.URLs)
@@ -71,4 +63,3 @@ func (router *Router) RunRouter() {
 		log.Fatal(err)
 	}
 }
-
