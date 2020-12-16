@@ -13,7 +13,7 @@ import (
 ```
 
 ## Как запустить кластер:
-Перейдите в папку `internal/config` и установите диапазон используемых портов в файле `commom_config.go`  
+Перейдите в папку `internal/config` и установите диапазон используемых портов в файле `config.go`  
 Пример:  
 ```
 // *SET PORTS RANGES HERE*
@@ -113,7 +113,7 @@ import (
  
 
 ## How to run cluster:
-Go to internal/config folder and set used ports range in `commom_config.go` file.  
+Go to internal/config folder and set used ports range in `config.go` file.  
 Example:  
 ```
 // *SET PORTS RANGES HERE*
