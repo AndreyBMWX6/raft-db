@@ -54,6 +54,8 @@ func (f *Follower) PlayRole() RolePlayer {
 			if msg := f.core.TryRecvDBMsg(); msg != nil {
 				f.ApplyDBMessage(msg)
 			}
+
+			Delay()
 		}
 	}
 }

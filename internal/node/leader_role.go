@@ -67,6 +67,8 @@ func (l *Leader) PlayRole() RolePlayer {
 			if msg := l.core.TryRecvDBMsg(); msg != nil {
 				l.ApplyDBMessage(msg)
 			}
+
+			Delay()
 		}
 	}
 }

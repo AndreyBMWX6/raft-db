@@ -93,14 +93,8 @@ func (c *Candidate) PlayRole() RolePlayer {
 					return nextRole
 				}
 			}
-			/*
-			// code for delay
-				m := make(map[int]int)
-				for i := 0; i < 10000; i++ {
-					m[i] = i
-				}
-			 */
 
+			Delay()
 		}
 	}
 }

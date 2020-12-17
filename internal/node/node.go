@@ -173,6 +173,15 @@ func (n* RaftCore) TryRecvDBMsg() message.DBMessage {
 	}
 }
 
+func Delay() {
+	// code for delay
+	m := make(map[int]int)
+	for i := 0; i < 10000; i++ {
+		m[i] = i
+	}
+
+}
+
 // Message senders wrapper
 // Here there are message sending logics
 func (n *RaftCore) SendRaftMsg(msg message.RaftMessage) {
