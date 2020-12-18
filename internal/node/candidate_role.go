@@ -94,7 +94,7 @@ func (c *Candidate) PlayRole() RolePlayer {
 				}
 			}
 
-			Delay()
+			c.core.Config.Delay(c.core.Config.DelayTime)
 		}
 	}
 }

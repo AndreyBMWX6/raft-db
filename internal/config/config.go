@@ -13,6 +13,7 @@ type Config struct {
 	FollowerTimeout  time.Duration
 	VotingTimeout    time.Duration
 	HeartbeatTimeout time.Duration
+	DelayTime        int // in ms
 
 	Servers   []net.UDPAddr
 	URLs      []string
@@ -89,11 +90,22 @@ func NewConfig() *Config {
 		FollowerTimeout  : 4000*time.Millisecond,
 		VotingTimeout    : time.Duration(rand.Intn(1000) + 1000)*time.Millisecond,
 		HeartbeatTimeout : 1000*time.Millisecond,
+		DelayTime        : 1,
 		Servers          : servers,
 		URLs			 : urls,
 		Usernames        : usernames,
 		Terms            : make([]uint32, len(servers)),
 		Entries          : make([][]*message.Entry, len(servers)),
+	}
+}
+
+func (cfg *Config) Delay(time int) {
+	for i := 0; i < time; i++ {
+		// code for delay
+		m := make(map[int]int)
+		for i := 0; i < 10000; i++ {
+			m[i] = i
+		}
 	}
 }
 

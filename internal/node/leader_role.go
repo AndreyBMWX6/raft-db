@@ -68,7 +68,7 @@ func (l *Leader) PlayRole() RolePlayer {
 				l.ApplyDBMessage(msg)
 			}
 
-			Delay()
+			l.core.Config.Delay(l.core.Config.DelayTime)
 		}
 	}
 }

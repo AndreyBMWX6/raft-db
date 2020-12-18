@@ -55,7 +55,7 @@ func (f *Follower) PlayRole() RolePlayer {
 				f.ApplyDBMessage(msg)
 			}
 
-			Delay()
+			f.core.Config.Delay(f.core.Config.DelayTime)
 		}
 	}
 }
