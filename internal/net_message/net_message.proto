@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+message BaseRaftMessage {
+  bytes OwnerIp = 1;
+  uint32 OwnerPort = 2;
+  bytes DestIp = 3;
+  uint32 DestPort = 4;
+  uint32 CurrTerm = 5;
+}
+
+message Entry {
+  uint32 Term = 1;
+  bytes Query = 2;
+}
+
+message AppendEntries {
+  BaseRaftMessage msg = 1;
+  uint32 PrevTerm = 2;
+  uint32 NewIndex = 3;
+  repeated Entry Entries = 4;
+  string URL = 5;
+}
+
+message AppendAck {
+  BaseRaftMessage Msg = 1;
+  bool Appended = 2;
+  bool Heartbeat = 3;
+  uint32 TopIndex = 4;
+}
+
+message RequestVote {
+  BaseRaftMessage Msg = 1;
+    uint32 TopIndex = 2;
+    uint32 TopTerm = 3;
+}
+
+message RequestAck {
+  BaseRaftMessage Msg = 1;
+  bool Voted = 2;
+}
+
+package net_message;
+message Message {
+  oneof RaftMessage {
+    AppendEntries AppendEntries = 1;
+    AppendAck AppendAck = 2;
+    RequestVote RequestVote = 3;
+    RequestAck RequestAck = 4;
+  }
+}
