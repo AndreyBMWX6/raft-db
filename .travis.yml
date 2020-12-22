@@ -5,13 +5,7 @@ go:
   - 1.15.2
 
 env:
-  - GO111MODULE=off
-
-before_install:
-  - go get -u github.com/gorilla/mux
-  - go get go.mongodb.org/mongo-driver/mongo
-  - go get -u github.com/golang/protobuf/proto
-  - go get -u github.com/golang/protobuf/protoc-gen-go
+  - GO111MODULE=on
 
 script:
   - go build ./cmd/main.go
