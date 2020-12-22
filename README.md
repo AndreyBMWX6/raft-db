@@ -1,17 +1,5 @@
 # raft-db 
 ## Руководство
-#### Примечание:
-Для корректного импорта пакетов интеграция Go модулей(Go modules integration) должна быть отключена.
-В противном случае в каждом файле нужно будет указать в `import` путь к внутренним пакетам в форме:  
-`"raft-db"/internal/<package>"`  
-Пример:
-```
-import (
- ...
- "raft-db/internal/message"
-)
-```
-
 ## Как запустить кластер:
 Перейдите в папку `internal/config` и установите диапазон используемых портов в файле `config.go`  
 Пример:  
@@ -107,19 +95,6 @@ kill-all.bat
 ```  
 
 ## Instructions
-#### Note:
-For correct importing Go modules integration should be disabled in your IDE.
-Otherwise, you need to change in `import` paths to internal packages in form:
-`"raft-db"/internal/<package>"`  
-Example:
-```
-import (
- ...
- "raft-db/internal/message"
-)
-```
- 
-
 ## How to run cluster:
 Go to `internal/config` folder and set used ports range in `config.go` file.  
 Example:  
