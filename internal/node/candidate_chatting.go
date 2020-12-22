@@ -1,8 +1,9 @@
 package node
 
 import (
-	"../message"
 	"log"
+
+	"github.com/AndreyBMWX6/raft-db/internal/message"
 )
 
 func (c *Candidate) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {

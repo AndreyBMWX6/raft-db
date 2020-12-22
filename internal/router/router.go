@@ -1,11 +1,11 @@
 package router
 
 import (
-	"net/http"
 	"log"
+	"net/http"
 
+	"github.com/AndreyBMWX6/raft-db/internal/config"
 	"github.com/gorilla/mux"
-	"../config"
 )
 
 type Router struct {

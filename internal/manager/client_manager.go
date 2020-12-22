@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"../message"
+	"github.com/AndreyBMWX6/raft-db/internal/message"
 	"github.com/gorilla/mux"
 
 	"log"

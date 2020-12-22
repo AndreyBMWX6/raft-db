@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"../message"
+	"github.com/AndreyBMWX6/raft-db/internal/message"
 )
 
 type Leader struct {

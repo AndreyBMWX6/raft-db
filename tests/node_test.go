@@ -4,8 +4,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"testing"
 
-	"../internal/message"
-	"../internal/node"
+	"github.com/AndreyBMWX6/raft-db/internal/message"
+	"github.com/AndreyBMWX6/raft-db/internal/node"
 )
 
 func GetRaftMsg(ch chan message.RaftMessage, result *message.AppendAck) {

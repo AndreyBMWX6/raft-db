@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"../message"
+	"github.com/AndreyBMWX6/raft-db/internal/message"
 )
 
 type Candidate struct {

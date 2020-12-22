@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"../internal/message"
-	"../internal/node"
+	"github.com/AndreyBMWX6/raft-db/internal/message"
+	"github.com/AndreyBMWX6/raft-db/internal/node"
 )
 
 func TestFollowerApplyLowerTermMessage(t *testing.T) {

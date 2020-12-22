@@ -1,12 +1,12 @@
 package node
 
 import (
-	"../config"
-	"../message"
 	"log"
 	"net"
-
 	"strconv"
+
+	"github.com/AndreyBMWX6/raft-db/internal/config"
+	"github.com/AndreyBMWX6/raft-db/internal/message"
 )
 
 // Error Types

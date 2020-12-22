@@ -2,11 +2,12 @@ package config
 
 import (
 	"log"
-	"net"
-	"time"
-	"strconv"
 	"math/rand"
-	"../message"
+	"net"
+	"strconv"
+	"time"
+
+	"github.com/AndreyBMWX6/raft-db/internal/message"
 )
 
 type Config struct {
