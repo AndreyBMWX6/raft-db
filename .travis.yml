@@ -4,10 +4,10 @@ go:
   - 1.15.x
 
 before_install:
-  - go get -u github.com/gorilla/mux
+  - go get github.com/gorilla/mux #-u
   - go get go.mongodb.org/mongo-driver/mongo
-  - go get -u github.com/golang/protobuf/proto
-  - go get -u github.com/golang/protobuf/protoc-gen-go
+  - go get github.com/golang/protobuf/proto #-u
+  - go get github.com/golang/protobuf/protoc-gen-go #-u
 
 script:
   - cd tests
