@@ -4,8 +4,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"testing"
 
-	"../internal/message"
-	"../internal/node"
+	"github.com/AndreyBMWX6/raft-db/internal/message"
+	"github.com/AndreyBMWX6/raft-db/internal/node"
 )
 
 func TestCandidateApplyLowerTermMessage(t *testing.T) {
@@ -16,6 +16,7 @@ func TestCandidateApplyLowerTermMessage(t *testing.T) {
 	var raftNode = node.NewRaftCore("127.0.0.1", "8001", "8081")
 	raftNode.Term = 1
 	var candidate = node.NewCandidate(raftNode)
+	var sync chan interface{}
 
 	// AppendEntries with lower term test
 	lowAppEnt := message.NewAppendEntries(
@@ -29,10 +30,11 @@ func TestCandidateApplyLowerTermMessage(t *testing.T) {
 		"",
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return nil cause message term is lower than candidate term
 	result := candidate.ApplyRaftMessage(lowAppEnt)
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, nil, result, "AppendEntries with lower term test")
 
 	// RequestVote with lower term test
@@ -45,10 +47,11 @@ func TestCandidateApplyLowerTermMessage(t *testing.T) {
 		0,
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return nil cause message term is lower than candidate term
 	result = candidate.ApplyRaftMessage(lowReqVot)
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, nil, result, "RequestVote with lower term test")
 
 	// RequestAck with lower term test
@@ -60,10 +63,11 @@ func TestCandidateApplyLowerTermMessage(t *testing.T) {
 		false,
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return nil cause message term is lower than candidate term
 	result = candidate.ApplyRaftMessage(lowReqAck)
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, nil, result, "RequestAck with lower term test")
 
 	// Candidate don't process AppendAck
@@ -73,6 +77,7 @@ func TestCandidateApplyLowerTermMessage(t *testing.T) {
 func TestCandidateApplyAppendEntries(t *testing.T) {
 	var raftNode = node.NewRaftCore("127.0.0.1", "8001", "8081")
 	var candidate = node.NewCandidate(raftNode)
+	var sync chan interface{}
 
 	// in AppendEntries case candidate becomes follower regardless of message term
 	// it can be equal or higher
@@ -90,7 +95,7 @@ func TestCandidateApplyAppendEntries(t *testing.T) {
 		"",
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return nil as candidate votes ony for candidate of bigger term
 	result := candidate.ApplyRaftMessage(eqMsg)
 
@@ -103,10 +108,9 @@ func TestCandidateApplyAppendEntries(t *testing.T) {
 		resultIsFollower = false
 	}
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, true, resultIsFollower, "message with equal term test")
-
 	require.Equal(t, eqMsg.Term(), result.ReleaseNode().Term, "message with equal term test")
-
 
 	//message with higher term test
 	// need to call NewCandidate helper cause candidate var is follower now
@@ -115,7 +119,7 @@ func TestCandidateApplyAppendEntries(t *testing.T) {
 	highMsg := eqMsg
 	highMsg.CurrTerm = 1 // higher than node term(0)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return *node.Follower as next role
 	// you can see role change in logs
 	// also will update node term
@@ -128,6 +132,7 @@ func TestCandidateApplyAppendEntries(t *testing.T) {
 		resultIsFollower = false
 	}
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, true, resultIsFollower, "message with higher term test")
 	require.Equal(t, highMsg.Term(), result.ReleaseNode().Term, "message with higher term test")
 }
@@ -135,6 +140,7 @@ func TestCandidateApplyAppendEntries(t *testing.T) {
 func TestCandidateApplyRequestVote(t *testing.T) {
 	var raftNode = node.NewRaftCore("127.0.0.1", "8001", "8081")
 	var candidate = node.NewCandidate(raftNode)
+	var sync chan interface{}
 
 	// message with equal term test
 	eqMsg := message.NewRequestVote(
@@ -146,17 +152,18 @@ func TestCandidateApplyRequestVote(t *testing.T) {
 		0,
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return nil as candidate votes ony for candidate of bigger term
 	result := candidate.ApplyRaftMessage(eqMsg)
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, nil, result, "message with equal term test")
 
 	//message with higher term test
 	highMsg := eqMsg
 	highMsg.CurrTerm = 1 // higher than node term(0)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return *node.Follower as next role
 	// you can see role change in logs
 	// also will update node term
@@ -171,6 +178,7 @@ func TestCandidateApplyRequestVote(t *testing.T) {
 		resultIsFollower = false
 	}
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, true, resultIsFollower, "message with higher term test")
 	require.Equal(t, highMsg.Term(), result.ReleaseNode().Term, "message with higher term test")
 }
@@ -178,6 +186,7 @@ func TestCandidateApplyRequestVote(t *testing.T) {
 func TestCandidateApplyRequestAck(t *testing.T) {
 	var raftNode = node.NewRaftCore("127.0.0.1", "8001", "8081")
 	var candidate = node.NewCandidate(raftNode)
+	var sync chan interface{}
 
 	// false RequestAck with equal term test
 	falEqMsg := message.NewRequestAck(
@@ -188,10 +197,11 @@ func TestCandidateApplyRequestAck(t *testing.T) {
 		false,
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return nil as node votes against candidate
 	result := candidate.ApplyRaftMessage(falEqMsg)
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, nil, result, "false RequestAck with equal term test")
 
 	// true RequestAck with equal term test
@@ -207,12 +217,13 @@ func TestCandidateApplyRequestAck(t *testing.T) {
 		true,
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return nil as node votes against candidate
 	result = candidate.ApplyRaftMessage(truEqMsg)
 
 	voters := candidate.GetVoters()
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, nil, result, "true RequestAck with equal term test")
 	require.Equal(t, oldVotersCount + 1, len(voters), "true RequestAck with equal term test")
 	require.Equal(t, struct{}{}, voters[owner.String()], "true RequestAck with equal term test")
@@ -222,12 +233,13 @@ func TestCandidateApplyRequestAck(t *testing.T) {
 
 	// using same message from prev test
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return nil as node votes against candidate
 	result = candidate.ApplyRaftMessage(truEqMsg)
 
 	voters = candidate.GetVoters()
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, nil, result, "true RequestAck with equal term test")
 	require.Equal(t, oldVotersCount, len(voters), "true RequestAck with equal term test")
 	require.Equal(t, struct{}{}, voters[owner.String()], "true RequestAck with equal term test")
@@ -243,7 +255,7 @@ func TestCandidateApplyRequestAck(t *testing.T) {
 		false,
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return follower as nextRole
 	result = candidate.ApplyRaftMessage(truHiMsg)
 
@@ -256,5 +268,6 @@ func TestCandidateApplyRequestAck(t *testing.T) {
 		resultIsFollower = false
 	}
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, true, resultIsFollower, "true RequestAck with higher term test")
 }

@@ -1,12 +1,10 @@
 package tests
 
 import (
+	"github.com/AndreyBMWX6/raft-db/internal/message"
+	"github.com/AndreyBMWX6/raft-db/internal/node"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
-
-	"../internal/message"
-	"../internal/node"
 )
 
 func TestFollowerApplyLowerTermMessage(t *testing.T) {
@@ -17,7 +15,7 @@ func TestFollowerApplyLowerTermMessage(t *testing.T) {
 	var raftNode = node.NewRaftCore("127.0.0.1", "8001", "8081")
 	raftNode.Term = 1
 	var follower = node.BecomeFollower(node.NewCandidate(raftNode))
-
+	var sync chan interface{}
 	// AppendEntries with lower term test
 	lowAppEnt := message.NewAppendEntries(
 		&message.BaseRaftMessage{
@@ -30,10 +28,11 @@ func TestFollowerApplyLowerTermMessage(t *testing.T) {
 		"",
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return nil cause message term is lower than candidate term
 	result := follower.ApplyRaftMessage(lowAppEnt)
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, nil, result, "AppendEntries with lower term test")
 
 	// RequestVote with lower term test
@@ -46,10 +45,11 @@ func TestFollowerApplyLowerTermMessage(t *testing.T) {
 		0,
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return nil cause message term is lower than candidate term
 	result = follower.ApplyRaftMessage(lowReqVot)
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, nil, result, "RequestVote with lower term test")
 
 	// RequestAck with lower term test
@@ -63,10 +63,11 @@ func TestFollowerApplyLowerTermMessage(t *testing.T) {
 		0,
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, nil)
+	go GetRaftMsg(raftNode.RaftOut, nil, sync)
 	// will return nil cause message term is lower than candidate term
 	result = follower.ApplyRaftMessage(lowAppAck)
 
+	Synchronize(sync, raftNode)
 	require.Equal(t, nil, result, "AppendAck with lower term test")
 
 	// Candidate don't process RequestAck
@@ -75,6 +76,7 @@ func TestFollowerApplyLowerTermMessage(t *testing.T) {
 func TestFollowerApplyAppendEntries(t *testing.T) {
 	var raftNode = node.NewRaftCore("127.0.0.1", "8001", "8081")
 	var follower = node.BecomeFollower(node.NewCandidate(raftNode))
+	var sync chan interface{}
 	var res message.AppendAck
 
 	// in AppendEntries case follower refreshes timer
@@ -92,11 +94,11 @@ func TestFollowerApplyAppendEntries(t *testing.T) {
 		"",
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, &res)
+	go GetRaftMsg(raftNode.RaftOut, &res, sync)
 
 	follower.ApplyAppendEntries(heartbeatMsg)
 
-	time.Sleep(1)
+	Synchronize(sync, raftNode)
 	require.Equal(t, true, res.Heartbeat, "heartbeat message test")
 	require.Equal(t, true, res.Appended, "heartbeat message test")
 
@@ -119,11 +121,11 @@ func TestFollowerApplyAppendEntries(t *testing.T) {
 		"",
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, &res)
+	go GetRaftMsg(raftNode.RaftOut, &res, sync)
 
 	follower.ApplyAppendEntries(badNewIdxMsg)
 
-	time.Sleep(1)
+	Synchronize(sync, raftNode)
 	require.Equal(t, false, res.Heartbeat, "bad NewIndex message test")
 	require.Equal(t, false, res.Appended, "bad NewIndex message test")
 
@@ -140,11 +142,11 @@ func TestFollowerApplyAppendEntries(t *testing.T) {
 		"",
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, &res)
+	go GetRaftMsg(raftNode.RaftOut, &res, sync)
 
 	follower.ApplyAppendEntries(goodMsg)
 
-	time.Sleep(1)
+	Synchronize(sync, raftNode)
 	require.Equal(t, false, res.Heartbeat, "good message test")
 	require.Equal(t, true, res.Appended, "good message test")
 	require.Equal(t, goodMsg.NewIndex, res.TopIndex, "good message test")
@@ -162,11 +164,11 @@ func TestFollowerApplyAppendEntries(t *testing.T) {
 		"",
 	)
 
-	go GetRaftMsg(raftNode.RaftOut, &res)
+	go GetRaftMsg(raftNode.RaftOut, &res, sync)
 
 	follower.ApplyAppendEntries(badPrevTermMsg)
 
-	time.Sleep(1)
+	Synchronize(sync, raftNode)
 	require.Equal(t, false, res.Heartbeat, "bad PrevTerm message test")
 	require.Equal(t, false, res.Appended, "bad PrevTerm message test")
 

@@ -6,12 +6,12 @@ package manager
 // NODE1 <----RaftMessage----> RAFTMANAGER1 <------UDP------> RAFTMANAGER2 <----RaftMessage----> NODE2
 
 import (
-	"google.golang.org/protobuf/proto"
 	"log"
 	"net"
 
-	"../message"
-	"../net_message"
+	"github.com/AndreyBMWX6/raft-db/internal/message"
+	"github.com/AndreyBMWX6/raft-db/internal/net_message"
+	"google.golang.org/protobuf/proto"
 )
 
 type RaftManager struct {

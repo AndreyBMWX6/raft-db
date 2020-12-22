@@ -1,8 +1,9 @@
 package message
 
 import (
-	"../net_message"
 	"net"
+
+	"github.com/AndreyBMWX6/raft-db/internal/net_message"
 )
 
 type AppendAck struct {

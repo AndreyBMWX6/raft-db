@@ -1,0 +1,12 @@
+languadge: go
+
+go:
+  - 1.15.x
+  - 1.15.2
+
+env:
+  - GO111MODULE=on
+
+script:
+  - go build ./cmd/main.go
+  - go test -v ./tests

@@ -3,7 +3,7 @@ package node
 import (
 	"log"
 
-	"../message"
+	"github.com/AndreyBMWX6/raft-db/internal/message"
 )
 
 func (l *Leader) ApplyRaftMessage(msg message.RaftMessage) RolePlayer {

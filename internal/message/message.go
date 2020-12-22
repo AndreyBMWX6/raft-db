@@ -2,8 +2,9 @@ package message
 
 import (
 	"net"
-	"../net_message"
 	"net/http"
+
+	"github.com/AndreyBMWX6/raft-db/internal/net_message"
 )
 
 // Raft Message Types

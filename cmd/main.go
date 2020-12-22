@@ -1,11 +1,12 @@
 package main
 
 import (
-	"../internal/manager"
-	"../internal/node"
-	"../internal/router"
 	"flag"
 	"log"
+
+	"github.com/AndreyBMWX6/raft-db/internal/manager"
+	"github.com/AndreyBMWX6/raft-db/internal/node"
+	"github.com/AndreyBMWX6/raft-db/internal/router"
 )
 
 func main() {
