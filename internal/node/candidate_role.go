@@ -40,6 +40,12 @@ func (c *Candidate) ReleaseNode() *RaftCore {
 	return core
 }
 
+// Added for testing
+func (c *Candidate) GetVoters() map[string]struct{} {
+
+	return c.voters
+}
+
 func (c *Candidate) PlayRole() RolePlayer {
 	// Votes for itself
 	c.voters[c.core.Addr.String()] = struct{}{}
