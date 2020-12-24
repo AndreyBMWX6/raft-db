@@ -1,6 +1,6 @@
 # raft-db 
 [![Build Status](https://travis-ci.org/AndreyBMWX6/raft-db.svg?branch=master)](https://travis-ci.org/AndreyBMWX6/raft-db)
-##Информация для защиты:
+## Информация для защиты:
 Презентация и видео, демонстрирующие работу программы находятся в папке `materials`
 
 ## Руководство
