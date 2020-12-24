@@ -1,5 +1,8 @@
 # raft-db 
 [![Build Status](https://travis-ci.org/AndreyBMWX6/raft-db.svg?branch=master)](https://travis-ci.org/AndreyBMWX6/raft-db)
+##Информация для защиты:
+Презентация и видео, демонстрирующие работу программы находятся в папке `materials`
+
 ## Руководство
 ## Как запустить кластер:
 Перейдите в папку `internal/config` и установите диапазон используемых портов в файле `config.go`  

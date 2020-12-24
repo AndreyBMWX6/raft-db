@@ -88,7 +88,7 @@ func NewConfig() *Config {
 	}
 
 	return &Config{
-		FollowerTimeout  : 4000*time.Millisecond,
+		FollowerTimeout  : 8000*time.Millisecond,
 		VotingTimeout    : time.Duration(rand.Intn(1000) + 1000)*time.Millisecond,
 		HeartbeatTimeout : 1000*time.Millisecond,
 		DelayTime        : 1,
