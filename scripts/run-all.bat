@@ -42,9 +42,9 @@ rem echo usernum=%usernum%
 goto :eof
 
 :runtrue
-start run.bat %ip% %firstIpPort% %firstUrlPort% %router% user%usernum%
+start run.bat %ip% %firstIpPort% %firstUrlPort% %router% user1
 goto :eof
 
 :runfalse
-start run.bat %ip% %firstIpPort% %firstUrlPort% %norouter% user%usernum%
+start run.bat %ip% %firstIpPort% %firstUrlPort% %norouter% user1
 goto :eof
