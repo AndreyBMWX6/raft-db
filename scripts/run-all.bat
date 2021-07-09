@@ -17,6 +17,8 @@ echo lastIpPort=%lastIpPort%
 echo firstUrlPort=%firstUrlPort%
 echo lastUrlPort=%lastUrlPort%
 
+start go run ../../raft-db/cmd/run_router.go
+
 for /l %%i in (1, 1, %usercnt%) do (
   if "%%i" == "1" (
   call :runtrue

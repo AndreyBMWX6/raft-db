@@ -6,7 +6,6 @@ import (
 
 	"github.com/AndreyBMWX6/raft-db/internal/manager"
 	"github.com/AndreyBMWX6/raft-db/internal/node"
-	"github.com/AndreyBMWX6/raft-db/internal/router"
 )
 
 func main() {
@@ -54,10 +53,12 @@ func main() {
 		Username:   username,
 	}
 
+	/*
 	if runRouter == "true" {
 		r := router.NewRouter()
 		go r.RunRouter()
 	}
+	 */
 
 	go rm.ProcessMessage()
 	go cm.ProcessEntries()
