@@ -22,12 +22,8 @@ func main() {
 	if urlPort == "" {
 		log.Fatalf("Error: no URL port")
 	}
-	runRouter := flag.Arg(3)
-	if runRouter == "" {
-		log.Fatalf("Error: no router info")
-	}
-	username := flag.Arg(4)
-	if urlPort == "" {
+	username := flag.Arg(3)
+	if username == "" {
 		log.Fatalf("Error: no username")
 	}
 
@@ -52,13 +48,6 @@ func main() {
 		DBOut:      raftNode.DBIn,
 		Username:   username,
 	}
-
-	/*
-	if runRouter == "true" {
-		r := router.NewRouter()
-		go r.RunRouter()
-	}
-	 */
 
 	go rm.ProcessMessage()
 	go cm.ProcessEntries()
