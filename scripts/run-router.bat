@@ -1,3 +1,3 @@
 @echo off
 
-start go run ../../raft-db/cmd/run_router.go
+start go run ../internal/router/run/run_router.go
