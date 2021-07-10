@@ -6,7 +6,6 @@ import (
 
 	"github.com/AndreyBMWX6/raft-db/internal/manager"
 	"github.com/AndreyBMWX6/raft-db/internal/node"
-	"github.com/AndreyBMWX6/raft-db/internal/router"
 )
 
 func main() {
@@ -23,12 +22,8 @@ func main() {
 	if urlPort == "" {
 		log.Fatalf("Error: no URL port")
 	}
-	runRouter := flag.Arg(3)
-	if runRouter == "" {
-		log.Fatalf("Error: no router info")
-	}
-	username := flag.Arg(4)
-	if urlPort == "" {
+	username := flag.Arg(3)
+	if username == "" {
 		log.Fatalf("Error: no username")
 	}
 
@@ -52,11 +47,6 @@ func main() {
 		DBIn:       raftNode.DBOut,
 		DBOut:      raftNode.DBIn,
 		Username:   username,
-	}
-
-	if runRouter == "true" {
-		r := router.NewRouter()
-		go r.RunRouter()
 	}
 
 	go rm.ProcessMessage()

@@ -7,8 +7,6 @@ set firstUrlPort=%~4
 set lastUrlPort=%~5
 set /a usercnt=(%lastIpPort% - %firstIpPort%) + 1
 set /a usernum=1
-set "router=true"
-set "norouter=false"
 
 echo running %usercnt% servers on ip:%ip%
 echo ip=%ip%
@@ -17,34 +15,20 @@ echo lastIpPort=%lastIpPort%
 echo firstUrlPort=%firstUrlPort%
 echo lastUrlPort=%lastUrlPort%
 
-for /l %%i in (1, 1, %usercnt%) do (
-  if "%%i" == "1" (
-  call :runtrue
- )
+start go run ../internal/router/run/run_router.go
 
- if not "%%i" == "1" (
-  call :runfalse
- )
+for /l %%i in (1, 1, %usercnt%) do (
+call :run
 call :inc
 )
 goto :eof
 
 :inc
-rem echo fisrtIpPort=%firstIpPort%
 set /a firstIpPort=firstIpPort + 1
-rem echo firstIpPort=%firstIpPort%
-rem echo firstURLPort=%firstURLPort%
 set /a firstURLPort=firstURLPort + 1
-rem echo firstURLPort=%firstURLPort%
-rem echo usernum=%usernum%
 set /a usernum=usernum + 1
-rem echo usernum=%usernum%
 goto :eof
 
-:runtrue
-start run.bat %ip% %firstIpPort% %firstUrlPort% %router% user%usernum%
-goto :eof
-
-:runfalse
-start run.bat %ip% %firstIpPort% %firstUrlPort% %norouter% user%usernum%
+:run
+start run.bat %ip% %firstIpPort% %firstUrlPort% user%usernum%
 goto :eof
