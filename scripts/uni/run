@@ -1,0 +1,10 @@
+# !/bin/bash
+
+ip=$1
+ipPort=$2
+urlPort=$3
+username=$4
+
+gnome-terminal -e "bash -c \"go run ../../cmd/main.go $ip $ipPort $urlPort $username; exec bash\""
+
+exit

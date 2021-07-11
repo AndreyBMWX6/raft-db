@@ -1,0 +1,31 @@
+# !/bin/bash
+
+ip=$1
+firstIpPort=$2
+lastIpPort=$3
+firstUrlPort=$4
+lastUrlPort=$5
+usernum=1
+
+./run-router
+
+echo "Router runned"
+
+ipPort=${firstIpPort}
+urlPort=${firstUrlPort}
+
+for (( ; ; ))
+do
+    echo "Server runned ${ip} ${ipPort} ${urlPort} user${usernum}"
+    ./run ${ip} ${ipPort} ${urlPort} user${usernum}
+
+    ((ipPort++))
+    ((urlPort++))
+    ((usernum++))
+
+    if ((ipPort > lastIpPort || urlPort > lastUrlPort))
+    then
+        break
+    fi
+done
+
