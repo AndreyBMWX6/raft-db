@@ -1,0 +1,6 @@
+# !/bin/bash
+
+killall go
+killall main
+killall run_router
+killall bash
